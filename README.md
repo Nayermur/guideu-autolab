@@ -29,7 +29,7 @@ RSS ফিড → Rafi → Nila → Sabbir ⇄ Arif → Mitu → 📱 আপন�
 
 | id | Niche | ধরন | সোর্স |
 |---|---|---|---|
-| `events` | What's Happening | ইভেন্ট পোস্টার (তারিখ, ভেন্যু) | Localoy |
+| `events` | What's Happening | ইভেন্ট পোস্টার (তারিখ, ভেন্যু, আয়োজক) | Localoy |
 | `food` | Food Trails | খাবারের গল্প | Wikipedia + Localoy-এর খাবারের ইভেন্ট |
 | `gta6` | GTA6 Updates | খবর | GameSpot, PC Gamer, Eurogamer (শুধু GTA/Rockstar) |
 | `cinema` | Cinema Guide | খবর | প্রথম আলো, BBC বাংলা (শুধু সিনেমা) |
@@ -41,7 +41,7 @@ RSS ফিড → Rafi → Nila → Sabbir ⇄ Arif → Mitu → 📱 আপন�
 - **কোনটা এর পরে চলবে দেখতে:** `npm run niches`
 - **সোর্সের ধরন:** `rss` (যেকোনো RSS, `filter` দিয়ে শব্দ বাছাই), `localoy-events`, `wikipedia-onthisday`, `wikipedia-topics` (নিজের বিষয়ের তালিকা)।
 
-**সোর্স নীতি:** শুধু সেই সোর্স ব্যবহার করা হয় যেখানে স্বয়ংক্রিয়ভাবে পড়া নিষেধ না। প্রতিটা পোস্টে সূত্র উল্লেখ থাকে, আর অন্যের ছবি নেওয়া হয় না। AllEvents-এর শর্তে scraping নিষেধ, তাই সেটা শুধু তাদের অফিসিয়াল API key পেলে যোগ হবে।
+**সোর্স নীতি:** শুধু সেই সোর্স ব্যবহার করা হয় যেখানে স্বয়ংক্রিয়ভাবে পড়া নিষেধ না। খবর আর Wikipedia-র পোস্টে সূত্র উল্লেখ থাকে, ইভেন্ট পোস্টারে আয়োজকের নাম থাকে, আর অন্যের ছবি নেওয়া হয় না। AllEvents-এর শর্তে scraping নিষেধ, তাই সেটা শুধু তাদের অফিসিয়াল API key পেলে যোগ হবে।
 
 ## সেটআপ (একবারই করতে হবে)
 
