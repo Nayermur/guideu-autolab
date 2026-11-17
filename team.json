@@ -1,13 +1,8 @@
 {
   "teamName": "Pulse",
-  "niche": "News and information-based updates: important national (Bangladesh) and world news, explained simply",
-  "audience": "Bangladeshi Instagram users who want to know what happened today, quickly and accurately, without reading long articles",
   "language": "Bangla",
-  "voice": "Neutral, factual and clear, like a trusted news explainer. Simple words. No political bias, no sensationalism, no graphic details. Attribute claims to their source (e.g. 'according to police', 'the ministry said'). Explain why the update matters to ordinary people.",
-  "postsPerRun": 2,
   "maxRevisions": 2,
   "minCriticScore": 7,
-  "maxArticleAgeHours": 24,
   "brand": {
     "name": "GuideU BD",
     "handle": "@guideu.bd",
@@ -16,37 +11,311 @@
     "text": "#f5f3ff"
   },
   "baseHashtags": [
-    "#guideubd",
-    "#News",
-    "#BanglaNews",
-    "#Bangladesh"
+    "#guideubd"
   ],
-  "sources": [
+  "niches": [
     {
-      "name": "BBC News Bangla",
-      "url": "https://feeds.bbci.co.uk/bengali/rss.xml"
+      "id": "events",
+      "name": "What's Happening",
+      "enabled": true,
+      "format": "event",
+      "topic": "Upcoming events in Dhaka: concerts, exhibitions, workshops, markets, food events, sports and cultural programmes",
+      "audience": "Young people in Dhaka looking for things to do this week",
+      "voice": "Exciting but clear. Lead with what the event is, then exactly when and where. Never invent prices, times or registration details.",
+      "postsPerRun": 2,
+      "hashtags": [
+        "#DhakaEvents",
+        "#WhatsHappening",
+        "#Dhaka"
+      ],
+      "kickers": [
+        "কনসার্ট",
+        "প্রদর্শনী",
+        "ওয়ার্কশপ",
+        "মেলা",
+        "খেলা",
+        "এই সপ্তাহে"
+      ],
+      "sources": [
+        {
+          "type": "localoy-events",
+          "name": "Localoy",
+          "daysAhead": 14
+        }
+      ]
     },
     {
-      "name": "Prothom Alo",
-      "url": "https://www.prothomalo.com/feed/"
+      "id": "food",
+      "name": "Food Trails",
+      "enabled": true,
+      "format": "explainer",
+      "topic": "Bangladeshi food: famous local dishes, regional specialties, their history and where they come from, plus food events in Dhaka",
+      "audience": "Food lovers in Bangladesh who enjoy discovering dishes and their stories",
+      "voice": "Warm and mouth-watering, like a food guide. Explain what the dish is, where it is from and what makes it special. Only use facts from the source.",
+      "postsPerRun": 1,
+      "hashtags": [
+        "#FoodTrails",
+        "#BangladeshiFood",
+        "#Foodie"
+      ],
+      "kickers": [
+        "খাবারের গল্প",
+        "আঞ্চলিক স্বাদ",
+        "মিষ্টি",
+        "স্ট্রিট ফুড",
+        "ফুড ইভেন্ট"
+      ],
+      "sources": [
+        {
+          "type": "wikipedia-topics",
+          "name": "Wikipedia",
+          "topics": [
+            "Kacchi biryani",
+            "Mezban",
+            "Pitha",
+            "Bakarkhani",
+            "Haleem",
+            "Shorshe ilish",
+            "Panta bhat",
+            "Fuchka",
+            "Chotpoti",
+            "Borhani",
+            "Mishti doi",
+            "Rasmalai",
+            "Chomchom",
+            "Rasgulla",
+            "Satkara",
+            "Bharta",
+            "Jhalmuri",
+            "Shingara",
+            "Chingri malai curry",
+            "Kala bhuna",
+            "Tehari",
+            "Khichdi",
+            "Jilapi",
+            "Sandesh (confectionery)",
+            "Nihari",
+            "Bhapa pitha",
+            "Patishapta",
+            "Chitoi pitha",
+            "Hilsa",
+            "Muri ghonto"
+          ]
+        },
+        {
+          "type": "localoy-events",
+          "name": "Localoy",
+          "daysAhead": 14,
+          "tags": [
+            "food",
+            "cafe",
+            "coffee",
+            "chef",
+            "cooking",
+            "baking",
+            "baked treats",
+            "dining",
+            "barista",
+            "dessert",
+            "brunch"
+          ]
+        }
+      ]
     },
     {
-      "name": "BBC World",
-      "url": "https://feeds.bbci.co.uk/news/world/rss.xml"
+      "id": "gta6",
+      "name": "GTA6 Updates",
+      "enabled": true,
+      "format": "news",
+      "maxAgeHours": 72,
+      "topic": "Grand Theft Auto VI (GTA 6) and Rockstar Games news: release date, trailers, gameplay, platforms and official announcements",
+      "audience": "Bangladeshi gamers waiting for GTA 6",
+      "voice": "Hype but honest. Clearly separate official announcements from rumors and leaks; label rumors as rumors. No clickbait.",
+      "postsPerRun": 1,
+      "hashtags": [
+        "#GTA6",
+        "#GTAVI",
+        "#RockstarGames",
+        "#Gaming"
+      ],
+      "kickers": [
+        "অফিসিয়াল",
+        "ট্রেলার",
+        "রিলিজ",
+        "গুজব",
+        "আপডেট"
+      ],
+      "sources": [
+        {
+          "type": "rss",
+          "name": "GameSpot",
+          "url": "https://www.gamespot.com/feeds/game-news",
+          "filter": "GTA|Grand Theft Auto|Rockstar"
+        },
+        {
+          "type": "rss",
+          "name": "PC Gamer",
+          "url": "https://www.pcgamer.com/rss/",
+          "filter": "GTA|Grand Theft Auto|Rockstar"
+        },
+        {
+          "type": "rss",
+          "name": "Eurogamer",
+          "url": "https://www.eurogamer.net/feed",
+          "filter": "GTA|Grand Theft Auto|Rockstar"
+        }
+      ]
     },
     {
-      "name": "Al Jazeera",
-      "url": "https://www.aljazeera.com/xml/rss/all.xml"
+      "id": "cinema",
+      "name": "Cinema Guide",
+      "enabled": true,
+      "format": "news",
+      "maxAgeHours": 48,
+      "topic": "Cinema in Bangladesh: new film releases, what is showing in theatres, Bangla films and OTT releases, trailers and film news",
+      "audience": "Movie lovers in Bangladesh deciding what to watch",
+      "voice": "Friendly and spoiler-free. Say what the film is, who is in it and when or where to watch it, based only on the source.",
+      "postsPerRun": 1,
+      "hashtags": [
+        "#CinemaGuide",
+        "#BanglaCinema",
+        "#Movies"
+      ],
+      "kickers": [
+        "নতুন মুক্তি",
+        "প্রেক্ষাগৃহে",
+        "ওটিটি",
+        "ট্রেলার",
+        "সিনেমার খবর"
+      ],
+      "sources": [
+        {
+          "type": "rss",
+          "name": "Prothom Alo",
+          "url": "https://www.prothomalo.com/feed/",
+          "filter": "সিনেমা|চলচ্চিত্র|প্রেক্ষাগৃহ|সিনেপ্লেক্স|ওটিটি|ট্রেলার|মুক্তি পা|নির্মাতা|ঢালিউড|বলিউড|হলিউড"
+        },
+        {
+          "type": "rss",
+          "name": "BBC News Bangla",
+          "url": "https://feeds.bbci.co.uk/bengali/rss.xml",
+          "filter": "সিনেমা|চলচ্চিত্র|প্রেক্ষাগৃহ|ওটিটি|অভিনেতা|অভিনেত্রী|নির্মাতা"
+        }
+      ]
+    },
+    {
+      "id": "history",
+      "name": "History Facts",
+      "enabled": true,
+      "format": "explainer",
+      "topic": "History facts, with a focus on Bangladesh and Bengal: historical places, events, people and 'on this day' moments",
+      "audience": "Curious Bangladeshi readers who enjoy learning surprising history",
+      "voice": "Story-like and fascinating, but strictly factual. Neutral on politics. Never add dates, numbers or claims that are not in the source.",
+      "postsPerRun": 1,
+      "hashtags": [
+        "#HistoryFacts",
+        "#BangladeshHistory",
+        "#OnThisDay"
+      ],
+      "kickers": [
+        "ইতিহাসের এই দিনে",
+        "অজানা ইতিহাস",
+        "ঐতিহাসিক স্থান",
+        "জানেন কি?"
+      ],
+      "sources": [
+        {
+          "type": "wikipedia-onthisday",
+          "name": "Wikipedia"
+        },
+        {
+          "type": "wikipedia-topics",
+          "name": "Wikipedia",
+          "topics": [
+            "Panam Nagar",
+            "Mahasthangarh",
+            "Somapura Mahavihara",
+            "Sixty Dome Mosque",
+            "Lalbagh Fort",
+            "Ahsan Manzil",
+            "Bengali language movement",
+            "Sonargaon",
+            "Wari-Bateshwar ruins",
+            "Bengal Sultanate",
+            "Kantajew Temple",
+            "Mainamati",
+            "Star Mosque",
+            "Armenian Church, Dhaka",
+            "Curzon Hall",
+            "Shaheed Minar, Dhaka",
+            "Pala Empire",
+            "Shashanka",
+            "Gauda (city)",
+            "Choto Sona Mosque",
+            "Bagha Mosque",
+            "Puthia Temple Complex",
+            "Baliati Palace",
+            "Rose Garden Palace",
+            "Dhakeshwari Temple",
+            "Muslin",
+            "Jamdani",
+            "Partition of Bengal (1905)",
+            "Shait Gambuj Mosque",
+            "Bara Katra"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "news",
+      "name": "News Updates",
+      "enabled": false,
+      "format": "news",
+      "maxAgeHours": 24,
+      "topic": "News and information-based updates: important national (Bangladesh) and world news, explained simply",
+      "audience": "Bangladeshi Instagram users who want to know what happened today, quickly and accurately, without reading long articles",
+      "voice": "Neutral, factual and clear, like a trusted news explainer. Simple words. No political bias, no sensationalism, no graphic details. Attribute claims to their source (e.g. 'according to police', 'the ministry said'). Explain why the update matters to ordinary people.",
+      "postsPerRun": 2,
+      "hashtags": [
+        "#News",
+        "#BanglaNews",
+        "#Bangladesh"
+      ],
+      "kickers": [
+        "জাতীয়",
+        "আন্তর্জাতিক",
+        "আপডেট",
+        "অর্থনীতি",
+        "শিক্ষা"
+      ],
+      "sources": [
+        {
+          "name": "BBC News Bangla",
+          "url": "https://feeds.bbci.co.uk/bengali/rss.xml"
+        },
+        {
+          "name": "Prothom Alo",
+          "url": "https://www.prothomalo.com/feed/"
+        },
+        {
+          "name": "BBC World",
+          "url": "https://feeds.bbci.co.uk/news/world/rss.xml"
+        },
+        {
+          "name": "Al Jazeera",
+          "url": "https://www.aljazeera.com/xml/rss/all.xml"
+        }
+      ]
     }
   ],
   "agents": {
     "scout": {
       "name": "Rafi",
-      "role": "Scout: finds the most important fresh news"
+      "role": "Scout: picks the best story or topic for the post"
     },
     "verifier": {
       "name": "Nila",
-      "role": "Verifier: checks facts against the source article"
+      "role": "Verifier: checks facts against the source"
     },
     "writer": {
       "name": "Sabbir",

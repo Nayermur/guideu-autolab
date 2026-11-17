@@ -64,6 +64,7 @@ async function load() {
   render();
 }
 
+const nicheName = (id) => team?.niches?.find((n) => n.id === id)?.name ?? (id ? id : "News");
 const agentInfo = (key) => team?.agents?.[key] ?? { name: key, role: key };
 
 // ---------- rendering ----------
@@ -103,7 +104,7 @@ function draftCard(d) {
   return `<button class="draft" data-id="${esc(d.id)}">${img}<div>
     <h3>${esc(d.headline)}</h3>
     <div class="sub">${esc(d.subline)}</div>
-    <div class="chips"><span class="chip ${esc(d.status)}">${esc(d.status)}</span><span class="chip score">Critic ${bn(d.critic?.score ?? "–")}/১০</span><span class="chip">${ago(d.createdAt)}</span></div>
+    <div class="chips"><span class="chip niche">${esc(nicheName(d.niche))}</span><span class="chip ${esc(d.status)}">${esc(d.status)}</span><span class="chip score">Critic ${bn(d.critic?.score ?? "–")}/১০</span><span class="chip">${ago(d.createdAt)}</span></div>
   </div></button>`;
 }
 
@@ -142,7 +143,7 @@ function openDraft(id) {
   $("#dialogBody").innerHTML = `<div class="detail">
     <div>${d.imagePath ? `<img src="${esc(d.imagePath)}" alt="${esc(d.headline)}">` : ""}</div>
     <div>
-      <div class="chips"><span class="chip ${esc(d.status)}">${esc(d.status)}</span><span class="chip score">Critic ${bn(d.critic?.score ?? "–")}/১০</span><span class="chip">রিভিশন ${bn(d.critic?.revisions ?? 0)}</span></div>
+      <div class="chips"><span class="chip niche">${esc(nicheName(d.niche))}</span><span class="chip ${esc(d.status)}">${esc(d.status)}</span><span class="chip score">Critic ${bn(d.critic?.score ?? "–")}/১০</span><span class="chip">রিভিশন ${bn(d.critic?.revisions ?? 0)}</span></div>
       <h2>${esc(d.headline)}</h2>
       ${d.status === "pending" ? `<p class="hint">Approve বা Reject করতে Telegram-এ বোতাম চাপুন।</p>` : ""}
       ${d.status === "approved" ? `<p class="hint">অনুমোদিত। পরের সিঙ্কে (৩০ মিনিটের মধ্যে) Instagram-এ যাবে।${d.publish?.lastError ? ` শেষ চেষ্টায় সমস্যা: ${esc(d.publish.lastError)}` : ""}</p>` : ""}

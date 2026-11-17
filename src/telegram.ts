@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
-import { env, ROOT } from "./config.js";
+import { env, ROOT, findNiche } from "./config.js";
 import { log, saveState, type Draft, type State } from "./store.js";
 
 /**
@@ -41,7 +41,8 @@ const buttons = (id: string) => ({
 
 export async function sendDraft(d: Draft): Promise<number | undefined> {
   if (!telegramEnabled()) return;
-  const header = `🆕 Draft ${d.id}  ·  Critic ${d.critic.score}/10\n📰 ${d.source.title}\n🔗 ${d.source.link}\n\n`;
+  const niche = d.niche ? findNiche(d.niche)?.name ?? d.niche : "News";
+  const header = `🆕 ${niche} · Draft ${d.id} · Critic ${d.critic.score}/10\n📰 ${d.source.title}\n🔗 ${d.source.link}\n\n`;
   const body = `${d.caption}\n\n${d.hashtags.join(" ")}`;
   // Photo captions are limited to 1024 chars, so the full caption goes in a second message if needed.
   const shortCaption = (header + body).length <= 1024 ? header + body : header + "(caption below)";

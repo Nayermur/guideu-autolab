@@ -125,6 +125,7 @@ button { font: inherit; color: inherit; }
 .chip.rejected { background: #ff5c5c22; color: var(--err); }
 .chip.pending { background: #ffc94d22; color: var(--warn); }
 .chip.published { background: #6c8cff22; color: #8fb3ff; }
+.chip.niche { background: #8fb3ff22; color: #b9ceff; }
 .chip.failed { background: #ff5c5c22; color: var(--err); }
 
 .agent {

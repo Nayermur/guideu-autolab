@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { ROOT, type AgentKey } from "./config.js";
+import type { EventInfo } from "./sources.js";
 
 /**
  * Phase 1 storage: one JSON file in data/. GitHub Actions commits it back to the repo,
@@ -11,6 +12,10 @@ export type DraftStatus = "pending" | "approved" | "rejected" | "published" | "f
 
 export interface Draft {
   id: string;
+  /** Which niche (team.json niches[].id) produced this draft. */
+  niche?: string;
+  /** Event details for event posters. */
+  event?: EventInfo;
   createdAt: string;
   status: DraftStatus;
   source: { title: string; link: string; feed: string; published?: string };
@@ -49,6 +54,10 @@ export interface State {
   logs: LogEntry[];
   telegramOffset: number;
   lastRunAt?: string;
+  /** Position in the niche rotation. */
+  nicheCursor?: number;
+  /** Evergreen topics already turned into posts (e.g. "wiki:Panam Nagar"). */
+  usedTopics?: string[];
 }
 
 const DATA_DIR = resolve(ROOT, "data");
@@ -64,6 +73,7 @@ export function loadState(): State {
 export function saveState(state: State) {
   mkdirSync(DATA_DIR, { recursive: true });
   state.seenLinks = state.seenLinks.slice(-1000);
+  if (state.usedTopics) state.usedTopics = state.usedTopics.slice(-2000);
   state.logs = state.logs.slice(-500);
   writeFileSync(STATE_FILE, JSON.stringify(state, null, 2) + "\n");
 }

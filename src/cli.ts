@@ -1,10 +1,10 @@
-import { team, env } from "./config.js";
+import { team, env, enabledNiches } from "./config.js";
 import { generate } from "./llm.js";
 import { runCycle, decide, syncApprovals, retry } from "./pipeline.js";
 import { instagramEnabled, publishApproved } from "./instagram.js";
 import { loadState } from "./store.js";
 import { processTelegramUpdates, testTelegram } from "./telegram.js";
-import { parseFeed } from "./sources.js";
+import { fetchSource } from "./sources.js";
 
 const [cmd = "help", arg] = process.argv.slice(2);
 
@@ -73,15 +73,28 @@ async function main() {
       break;
     }
     case "check-feeds": {
-      // Shows how many fresh stories each news source returns, so broken feeds are easy to spot.
-      for (const s of team.sources) {
-        try {
-          const res = await fetch(s.url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; AutoLabBot/0.1)" }, signal: AbortSignal.timeout(20_000) });
-          const items = res.ok ? parseFeed(await res.text(), s.name) : [];
-          console.log(`${res.ok && items.length ? "OK  " : "FAIL"} ${s.name}: HTTP ${res.status}, ${items.length} stories${items[0] ? `, e.g. "${items[0].title}"` : ""}`);
-        } catch (e: any) {
-          console.log(`FAIL ${s.name}: ${e.message}`);
+      // Tests every source of every niche (or only NICHE), so broken sources are easy to spot.
+      for (const n of team.niches.filter((x) => !env.niche || x.id === env.niche)) {
+        console.log(`\n== ${n.name} (${n.id})${n.enabled ? "" : " [disabled]"}`);
+        for (const src of n.sources) {
+          try {
+            const items = await fetchSource(src, new Set());
+            const e = items[0];
+            const sample = e ? `, e.g. "${e.title.slice(0, 70)}"${e.event ? ` on ${e.event.start} at ${e.event.venue ?? "?"}` : ""}` : "";
+            console.log(`${items.length ? "OK  " : "FAIL"} ${src.name} [${src.type}]: ${items.length} items${sample}`);
+          } catch (err: any) {
+            console.log(`FAIL ${src.name} [${src.type}]: ${err.message}`);
+          }
         }
+      }
+      break;
+    }
+    case "niches": {
+      const s = loadState();
+      const list = enabledNiches();
+      const next = env.niche || list[(s.nicheCursor ?? 0) % Math.max(list.length, 1)]?.id;
+      for (const n of team.niches) {
+        console.log(`${n.enabled ? "✓" : " "} ${n.id.padEnd(8)} ${n.name.padEnd(18)} ${n.format.padEnd(9)} ${n.postsPerRun}/shift${n.id === next ? "   ← next shift" : ""}`);
       }
       break;
     }
@@ -102,7 +115,9 @@ async function main() {
   npm run sync                   sync Telegram + publish approved posts to Instagram
   npm run publish                publish approved posts to Instagram now
   npm run retry -- <id>          try publishing a failed post again
-  npm run check-feeds            test every news source in team.json
+  npm run check-feeds            test every source of every niche (NICHE=id for one)
+  npm run niches                 list niches and which one runs next
+  NICHE=events npm run run       run a shift for one specific niche
   npm run test:llm               check the AI key works`);
   }
 }

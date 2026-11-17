@@ -18,6 +18,11 @@ on:
         default: shift
         type: choice
         options: [shift, telegram, check-feeds, test-telegram]
+      niche:
+        description: "Which niche to run (auto = next in rotation)"
+        default: auto
+        type: choice
+        options: [auto, events, food, gta6, cinema, history, news]
 
 permissions:
   contents: read
@@ -39,6 +44,7 @@ jobs:
       IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
       IG_GRAPH_HOST: ${{ vars.IG_GRAPH_HOST }}
       IG_GRAPH_VERSION: ${{ vars.IG_GRAPH_VERSION }}
+      NICHE: ${{ github.event.inputs.niche != 'auto' && github.event.inputs.niche || '' }}
       MODE: ${{ github.event.inputs.mode || (github.event.schedule == '13,43 * * * *' && 'telegram' || 'shift') }}
     steps:
       - uses: actions/checkout@v5

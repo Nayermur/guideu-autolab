@@ -16,6 +16,7 @@
     "publish": "tsx src/cli.ts publish",
     "retry": "tsx src/cli.ts retry",
     "check-feeds": "tsx src/cli.ts check-feeds",
+    "niches": "tsx src/cli.ts niches",
     "test:llm": "tsx src/cli.ts test-llm",
     "dashboard:build": "node scripts/build-dashboard.mjs",
     "dashboard": "node scripts/build-dashboard.mjs && node scripts/serve.mjs",

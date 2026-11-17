@@ -1,6 +1,19 @@
 import { readFileSync } from "node:fs";
 import { XMLParser } from "fast-xml-parser";
-import { env, team } from "./config.js";
+import { env, type Niche, type SourceConfig } from "./config.js";
+import { fetchLocaloyEvents } from "./connectors/localoy.js";
+import { fetchOnThisDay, fetchWikipediaTopics } from "./connectors/wikipedia.js";
+
+export interface EventInfo {
+  start: string; // YYYY-MM-DD
+  end?: string;
+  venue?: string;
+  area?: string;
+  address?: string;
+  mapUrl?: string;
+  organizer?: string;
+  tags?: string[];
+}
 
 export interface FeedItem {
   title: string;
@@ -8,6 +21,12 @@ export interface FeedItem {
   summary: string;
   published?: string;
   feed: string;
+  /** Full source text when the connector already has it (no page download needed). */
+  sourceText?: string;
+  /** Structured event details for event posters. */
+  event?: EventInfo;
+  /** Identifies an evergreen topic so it is not repeated. */
+  topicKey?: string;
 }
 
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@" });
@@ -56,28 +75,53 @@ export function parseFeed(xml: string, feedName: string): FeedItem[] {
   return [...rssItems, ...atomItems].filter((i) => i.title && i.link);
 }
 
-export async function fetchAllFeeds(): Promise<{ items: FeedItem[]; errors: string[] }> {
+async function fetchRss(src: Extract<SourceConfig, { type: "rss" }>): Promise<FeedItem[]> {
+  const res = await fetch(src.url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(20_000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  let items = parseFeed(await res.text(), src.name);
+  if (src.filter) {
+    const re = new RegExp(src.filter, "i");
+    items = items.filter((i) => re.test(`${i.title} ${i.summary}`));
+  }
+  return items;
+}
+
+export async function fetchSource(src: SourceConfig, usedTopics: Set<string>): Promise<FeedItem[]> {
+  switch (src.type) {
+    case "rss":
+      return fetchRss(src);
+    case "localoy-events":
+      return fetchLocaloyEvents({ daysAhead: src.daysAhead, tags: src.tags });
+    case "wikipedia-onthisday":
+      return fetchOnThisDay();
+    case "wikipedia-topics":
+      return fetchWikipediaTopics(src.topics, usedTopics);
+  }
+}
+
+/** Gathers fresh material for one niche from all of its sources. */
+export async function fetchNicheItems(niche: Niche, usedTopics = new Set<string>()): Promise<{ items: FeedItem[]; errors: string[] }> {
   if (env.sampleFeed) {
     return { items: parseFeed(readFileSync(env.sampleFeed, "utf8"), "Sample feed"), errors: [] };
   }
   const errors: string[] = [];
   const results = await Promise.all(
-    team.sources.map(async (s) => {
+    niche.sources.map(async (s) => {
       try {
-        const res = await fetch(s.url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(20_000) });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return parseFeed(await res.text(), s.name);
+        return await fetchSource(s, usedTopics);
       } catch (e: any) {
         errors.push(`${s.name}: ${e.message}`);
         return [];
       }
     }),
   );
-  const cutoff = Date.now() - team.maxArticleAgeHours * 3600_000;
+  const cutoff = Date.now() - (niche.maxAgeHours ?? 48) * 3600_000;
   const seen = new Set<string>();
   const items = results.flat().filter((i) => {
-    const t = i.published ? Date.parse(i.published) : NaN;
-    if (!Number.isNaN(t) && t < cutoff) return false;
+    if (niche.format === "news") {
+      const t = i.published ? Date.parse(i.published) : NaN;
+      if (!Number.isNaN(t) && t < cutoff) return false;
+    }
     const key = i.title.toLowerCase();
     if (seen.has(key)) return false;
     seen.add(key);
@@ -94,6 +138,21 @@ export async function fetchArticleText(url: string): Promise<string> {
     const html = await res.text();
     const body = html.match(/<article[\s\S]*?<\/article>/i)?.[0] ?? html;
     return stripHtml(body).slice(0, 8000);
+  } catch {
+    return "";
+  }
+}
+
+/** The page's own description (og:description / meta description), without related-items noise. */
+export async function fetchMetaDescription(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": UA }, redirect: "follow", signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) return "";
+    const html = await res.text();
+    const m =
+      html.match(/<meta[^>]+property="og:description"[^>]+content="([^"]*)"/i) ??
+      html.match(/<meta[^>]+name="description"[^>]+content="([^"]*)"/i);
+    return m ? stripHtml(m[1]) : "";
   } catch {
     return "";
   }
