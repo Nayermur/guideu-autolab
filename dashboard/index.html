@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AutoLab HQ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="pulse" id="liveDot"></span>
+      <span class="mono" id="teamName">AUTOLAB</span>
+      <span class="badge" id="demoBadge" hidden>ডেমো ডেটা</span>
+    </div>
+    <div class="meta"><span id="lastRun">লোড হচ্ছে…</span> · <a href="/api/logout" class="logout">লগআউট</a></div>
+  </header>
+
+  <main class="layout">
+    <section class="stage-card" aria-label="ভার্চুয়াল অফিস">
+      <div class="window-bar">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span class="mono small" id="officeTitle">PULSE HQ</span>
+        <span class="small live" id="liveLabel">● LIVE</span>
+      </div>
+      <div class="stage" id="stage">
+        <canvas id="office" aria-hidden="true"></canvas>
+        <div class="board" id="board"></div>
+        <div id="tags"></div>
+      </div>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <aside class="panel">
+      <nav class="tabs" role="tablist">
+        <button role="tab" data-tab="missions" aria-selected="true">মিশন <span class="count" id="pendingCount">0</span></button>
+        <button role="tab" data-tab="team">টিম</button>
+        <button role="tab" data-tab="logbook">লগবুক</button>
+        <button role="tab" data-tab="archive">আর্কাইভ</button>
+      </nav>
+      <div class="tab-body" id="tabBody"></div>
+    </aside>
+  </main>
+
+  <dialog id="draftDialog">
+    <form method="dialog"><button class="close" aria-label="বন্ধ করুন">✕</button></form>
+    <div id="dialogBody"></div>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

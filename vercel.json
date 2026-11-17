@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "echo 'no install needed for the dashboard'",
+  "buildCommand": "node scripts/build-dashboard.mjs",
+  "outputDirectory": "public",
+  "headers": [
+    {
+      "source": "/data/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ],
+  "cleanUrls": true
+}

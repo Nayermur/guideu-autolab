@@ -1,0 +1,36 @@
+{
+  "name": "autolab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A free, multi-agent AI news team (Scout, Verifier, Writer, Designer, Critic) with human approval and Instagram publishing.",
+  "type": "module",
+  "scripts": {
+    "run": "tsx src/cli.ts run",
+    "status": "tsx src/cli.ts status",
+    "list": "tsx src/cli.ts list",
+    "approve": "tsx src/cli.ts approve",
+    "reject": "tsx src/cli.ts reject",
+    "telegram": "tsx src/cli.ts telegram",
+    "sync": "tsx src/cli.ts sync",
+    "test-telegram": "tsx src/cli.ts test-telegram",
+    "publish": "tsx src/cli.ts publish",
+    "retry": "tsx src/cli.ts retry",
+    "check-feeds": "tsx src/cli.ts check-feeds",
+    "test:llm": "tsx src/cli.ts test-llm",
+    "dashboard:build": "node scripts/build-dashboard.mjs",
+    "dashboard": "node scripts/build-dashboard.mjs && node scripts/serve.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "fast-xml-parser": "5.12.0",
+    "playwright": "1.63.0",
+    "tsx": "4.23.15"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "typescript": "5.7.2"
+  }
+}

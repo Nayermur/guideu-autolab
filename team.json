@@ -1,0 +1,66 @@
+{
+  "teamName": "Pulse",
+  "niche": "News and information-based updates: important national (Bangladesh) and world news, explained simply",
+  "audience": "Bangladeshi Instagram users who want to know what happened today, quickly and accurately, without reading long articles",
+  "language": "Bangla",
+  "voice": "Neutral, factual and clear, like a trusted news explainer. Simple words. No political bias, no sensationalism, no graphic details. Attribute claims to their source (e.g. 'according to police', 'the ministry said'). Explain why the update matters to ordinary people.",
+  "postsPerRun": 2,
+  "maxRevisions": 2,
+  "minCriticScore": 7,
+  "maxArticleAgeHours": 24,
+  "brand": {
+    "name": "GuideU BD",
+    "handle": "@guideu.bd",
+    "background": "#14111f",
+    "accent": "#ff3d5a",
+    "text": "#f5f3ff"
+  },
+  "baseHashtags": [
+    "#guideubd",
+    "#News",
+    "#BanglaNews",
+    "#Bangladesh"
+  ],
+  "sources": [
+    {
+      "name": "BBC News Bangla",
+      "url": "https://feeds.bbci.co.uk/bengali/rss.xml"
+    },
+    {
+      "name": "Prothom Alo",
+      "url": "https://www.prothomalo.com/feed/"
+    },
+    {
+      "name": "BBC World",
+      "url": "https://feeds.bbci.co.uk/news/world/rss.xml"
+    },
+    {
+      "name": "Al Jazeera",
+      "url": "https://www.aljazeera.com/xml/rss/all.xml"
+    }
+  ],
+  "agents": {
+    "scout": {
+      "name": "Rafi",
+      "role": "Scout: finds the most important fresh news"
+    },
+    "verifier": {
+      "name": "Nila",
+      "role": "Verifier: checks facts against the source article"
+    },
+    "writer": {
+      "name": "Sabbir",
+      "role": "Writer: writes the headline and caption"
+    },
+    "designer": {
+      "name": "Mitu",
+      "role": "Designer: designs the post image"
+    },
+    "critic": {
+      "name": "Arif",
+      "role": "Critic: reviews everything and sends work back if it is weak"
+    }
+  },
+  "dashboardUrl": "https://guideu-autolab.vercel.app",
+  "autoPublish": true
+}

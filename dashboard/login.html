@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>AutoLab Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0c12; --surface: #17151f; --surface-2: #211e2c; --line: #2e2a3d;
+      --text: #f3f1fa; --muted: #9a95ad; --accent: #ff3d5a; --err: #ff5c5c;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: "Hind Siliguri", system-ui, sans-serif; font-size: 15px;
+      background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 48px 48px;
+      display: grid; place-items: center; padding: 16px;
+    }
+    .card {
+      width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--line);
+      border-radius: 16px; overflow: hidden;
+    }
+    .bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+    .dots { display: flex; gap: 6px; }
+    .dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: block; }
+    .mono { font-family: "JetBrains Mono", monospace; letter-spacing: .08em; font-size: 12px; color: var(--muted); }
+    form { padding: 28px 24px 24px; display: grid; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-family: "JetBrains Mono", monospace; letter-spacing: .12em; font-weight: 700; }
+    .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+    h1 { margin: 4px 0 0; font-size: 24px; line-height: 1.3; }
+    p.sub { margin: -8px 0 4px; color: var(--muted); }
+    label { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
+    input {
+      font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--line);
+      border-radius: 10px; padding: 11px 12px; width: 100%;
+    }
+    input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+    button {
+      font: inherit; font-weight: 700; color: #fff; background: var(--accent); border: 0; border-radius: 10px;
+      padding: 12px; cursor: pointer; margin-top: 4px;
+    }
+    button:hover { filter: brightness(1.08); }
+    button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    .error {
+      display: none; background: #ff5c5c1f; color: var(--err); border: 1px solid #ff5c5c55;
+      border-radius: 10px; padding: 10px 12px; font-size: 14px;
+    }
+    .error.show { display: block; }
+    .crew { display: flex; gap: 6px; justify-content: center; padding: 0 0 22px; }
+    .crew span { width: 10px; height: 14px; border-radius: 3px 3px 1px 1px; }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="mono">PULSE HQ</span></div>
+    <form method="post" action="/api/login">
+      <div class="brand"><span class="dot"></span>AUTOLAB</div>
+      <h1>অফিসে ঢুকুন</h1>
+      <p class="sub">আপনার AI নিউজ টিমের ড্যাশবোর্ড</p>
+      <div class="error" id="error" role="alert">ইমেইল বা পাসওয়ার্ড ভুল। আবার চেষ্টা করুন।</div>
+      <label>ইমেইল
+        <input type="email" name="email" autocomplete="username" required autofocus>
+      </label>
+      <label>পাসওয়ার্ড
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <button type="submit">লগইন</button>
+    </form>
+    <div class="crew" aria-hidden="true">
+      <span style="background:#4f9d69"></span><span style="background:#6c8cff"></span><span style="background:#f2f2f2"></span><span style="background:#ff8fab"></span><span style="background:#ef476f"></span>
+    </div>
+  </main>
+  <script>
+    if (new URLSearchParams(location.search).has("error")) document.getElementById("error").classList.add("show");
+  </script>
+</body>
+</html>

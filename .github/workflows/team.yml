@@ -1,0 +1,106 @@
+name: AutoLab team
+
+# The code lives in this (public) repository. The team's memory (drafts, logs, post images)
+# and the dashboard site live in a separate private repository, set in the DATA_REPO variable
+# (for example "your-name/autolab-data"). Vercel deploys the dashboard from that private repo.
+
+on:
+  schedule:
+    # GitHub drops scheduled runs at busy times like :00 and :30, so these use quiet minutes.
+    # Full team shifts at 09:07, 14:07 and 20:07 Bangladesh time (UTC+6)
+    - cron: "7 3,8,14 * * *"
+    # Every 30 minutes: apply Telegram approvals and publish approved posts to Instagram
+    - cron: "13,43 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "shift = run the whole team, telegram = sync approvals + publish to Instagram, check-feeds = test news sources, test-telegram = send a Telegram test message"
+        default: shift
+        type: choice
+        options: [shift, telegram, check-feeds, test-telegram]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autolab-team
+  cancel-in-progress: false
+
+jobs:
+  work:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODELS: ${{ vars.GEMINI_MODELS }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      IG_USER_ID: ${{ secrets.IG_USER_ID }}
+      IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+      IG_GRAPH_HOST: ${{ vars.IG_GRAPH_HOST }}
+      IG_GRAPH_VERSION: ${{ vars.IG_GRAPH_VERSION }}
+      MODE: ${{ github.event.inputs.mode || (github.event.schedule == '13,43 * * * *' && 'telegram' || 'shift') }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check out the private team memory
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DATA_REPO }}
+          token: ${{ secrets.DATA_REPO_TOKEN }}
+          path: site
+
+      - name: Link team memory into the workspace
+        run: |
+          mkdir -p site/data site/output
+          rm -rf data output
+          ln -s site/data data
+          ln -s site/output output
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Chromium (for post images)
+        if: env.MODE == 'shift'
+        run: npx playwright install --with-deps chromium
+
+      - name: Run team shift
+        if: env.MODE == 'shift'
+        run: npm run run
+
+      - name: Sync Telegram approvals and publish to Instagram
+        if: env.MODE == 'telegram'
+        run: npm run sync
+
+      - name: Test news sources
+        if: env.MODE == 'check-feeds'
+        run: npm run check-feeds
+
+      - name: Test Telegram setup
+        if: env.MODE == 'test-telegram'
+        run: npm run test-telegram
+
+      - name: Save team memory and dashboard to the private repo
+        if: always()
+        run: |
+          # Keep the dashboard site in the private repo up to date with this code.
+          rm -rf site/dashboard site/scripts
+          cp -r dashboard site/dashboard
+          mkdir -p site/scripts
+          cp scripts/build-dashboard.mjs site/scripts/
+          cp middleware.js vercel.json team.json site/
+          echo '{ "private": true, "type": "module" }' > site/package.json
+          printf 'public/\nnode_modules/\n' > site/.gitignore
+
+          cd site
+          git config user.name "autolab-bot"
+          git config user.email "autolab-bot@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "Nothing to save"; exit 0; fi
+          git commit -m "Team ${MODE}: $(date -u +'%Y-%m-%d %H:%M') UTC"
+          git pull --rebase
+          git push
