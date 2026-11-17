@@ -104,7 +104,8 @@ export async function runCycle(): Promise<Draft[]> {
         setAgent(state, "designer", "idle", `Designed ${id}`);
         log(state, "designer", `${A.designer.name} designed ${id} (${brief.layout})`);
 
-        const hashtags = [...new Set([...(copy.hashtags ?? []), ...niche.hashtags, ...team.baseHashtags])].slice(0, 12);
+        // Instagram hashtags are case-insensitive, so #GuideUBD and #guideubd count as one.
+        const hashtags = [...new Map([...(copy.hashtags ?? []), ...niche.hashtags, ...team.baseHashtags].map((t) => [t.toLowerCase(), t])).values()].slice(0, 12);
         const draft: Draft = {
           id,
           niche: niche.id,
