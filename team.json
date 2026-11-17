@@ -191,12 +191,6 @@
       "sources": [
         {
           "type": "rss",
-          "name": "Prothom Alo Entertainment",
-          "url": "https://www.prothomalo.com/feed/entertainment",
-          "filter": "সিনেমা|চলচ্চিত্র|প্রেক্ষাগৃহ|সিনেপ্লেক্স|ওটিটি|ট্রেলার|মুক্তি পা|নির্মাতা|ঢালিউড|বলিউড|হলিউড|অভিনেতা|অভিনেত্রী"
-        },
-        {
-          "type": "rss",
           "name": "Prothom Alo",
           "url": "https://www.prothomalo.com/feed/",
           "filter": "সিনেমা|চলচ্চিত্র|প্রেক্ষাগৃহ|সিনেপ্লেক্স|ওটিটি|ট্রেলার|মুক্তি পা|নির্মাতা|ঢালিউড|বলিউড|হলিউড|অভিনেতা|অভিনেত্রী"
