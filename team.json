@@ -172,7 +172,7 @@
       "enabled": true,
       "format": "news",
       "maxAgeHours": 48,
-      "topic": "Cinema in Bangladesh: new film releases, what is showing in theatres, Bangla films and OTT releases, trailers and film news",
+      "topic": "Cinema guide for Bangladesh: new Bangla, Bollywood and Hollywood releases, what is coming to theatres and OTT, trailers and big film news",
       "audience": "Movie lovers in Bangladesh deciding what to watch",
       "voice": "Friendly and spoiler-free. Say what the film is, who is in it and when or where to watch it, based only on the source.",
       "postsPerRun": 1,
@@ -191,15 +191,39 @@
       "sources": [
         {
           "type": "rss",
+          "name": "Prothom Alo Entertainment",
+          "url": "https://www.prothomalo.com/feed/entertainment",
+          "filter": "সিনেমা|চলচ্চিত্র|প্রেক্ষাগৃহ|সিনেপ্লেক্স|ওটিটি|ট্রেলার|মুক্তি পা|নির্মাতা|ঢালিউড|বলিউড|হলিউড|অভিনেতা|অভিনেত্রী"
+        },
+        {
+          "type": "rss",
           "name": "Prothom Alo",
           "url": "https://www.prothomalo.com/feed/",
-          "filter": "সিনেমা|চলচ্চিত্র|প্রেক্ষাগৃহ|সিনেপ্লেক্স|ওটিটি|ট্রেলার|মুক্তি পা|নির্মাতা|ঢালিউড|বলিউড|হলিউড"
+          "filter": "সিনেমা|চলচ্চিত্র|প্রেক্ষাগৃহ|সিনেপ্লেক্স|ওটিটি|ট্রেলার|মুক্তি পা|নির্মাতা|ঢালিউড|বলিউড|হলিউড|অভিনেতা|অভিনেত্রী"
         },
         {
           "type": "rss",
           "name": "BBC News Bangla",
           "url": "https://feeds.bbci.co.uk/bengali/rss.xml",
-          "filter": "সিনেমা|চলচ্চিত্র|প্রেক্ষাগৃহ|ওটিটি|অভিনেতা|অভিনেত্রী|নির্মাতা"
+          "filter": "সিনেমা|চলচ্চিত্র|প্রেক্ষাগৃহ|সিনেপ্লেক্স|ওটিটি|ট্রেলার|মুক্তি পা|নির্মাতা|ঢালিউড|বলিউড|হলিউড|অভিনেতা|অভিনেত্রী"
+        },
+        {
+          "type": "rss",
+          "name": "Variety",
+          "url": "https://variety.com/feed/",
+          "filter": "box office|release date|in theaters|trailer|Bangladesh|Bollywood|Shah Rukh|Marvel|DC Studios|Netflix|Prime Video|Oscars"
+        },
+        {
+          "type": "rss",
+          "name": "Deadline",
+          "url": "https://deadline.com/feed/",
+          "filter": "box office|release date|in theaters|trailer|Bangladesh|Bollywood|Shah Rukh|Marvel|DC Studios|Netflix|Prime Video|Oscars"
+        },
+        {
+          "type": "rss",
+          "name": "BBC Entertainment",
+          "url": "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
+          "filter": "film|movie|cinema|box office|trailer|Oscar"
         }
       ]
     },
@@ -291,19 +315,23 @@
       "sources": [
         {
           "name": "BBC News Bangla",
-          "url": "https://feeds.bbci.co.uk/bengali/rss.xml"
+          "url": "https://feeds.bbci.co.uk/bengali/rss.xml",
+          "type": "rss"
         },
         {
           "name": "Prothom Alo",
-          "url": "https://www.prothomalo.com/feed/"
+          "url": "https://www.prothomalo.com/feed/",
+          "type": "rss"
         },
         {
           "name": "BBC World",
-          "url": "https://feeds.bbci.co.uk/news/world/rss.xml"
+          "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+          "type": "rss"
         },
         {
           "name": "Al Jazeera",
-          "url": "https://www.aljazeera.com/xml/rss/all.xml"
+          "url": "https://www.aljazeera.com/xml/rss/all.xml",
+          "type": "rss"
         }
       ]
     }
