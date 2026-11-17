@@ -24,7 +24,7 @@ const SCOUT_RULES: Record<Niche["format"], string> = {
 
 const CAPTION_RULES: Record<Niche["format"], string> = {
   news: "hook line, 2-4 short paragraphs covering what happened, who/where/when, and why it matters. End with what happens next, or a neutral question to invite comments (no question for deaths, disasters or tragedies). Attribute claims and mention the source name.",
-  event: "hook line saying what the event is, then the exact date, venue and area on their own short lines (use 📅 📍 emoji), then 1-2 sentences on why it's worth going. Mention the organizer if given. Never invent the time, ticket price or registration details: if they are not in the facts, say to check details on Localoy. End with a question like who you'd go with.",
+  event: "hook line saying what the event is, then the exact date, venue and area on their own short lines (use 📅 📍 emoji), then 1-2 sentences on why it's worth going. Mention the organizer if given. Never invent the time, ticket price or registration details: if they are not in the facts, tell readers to check the organizer's page for details. Do not mention the website the listing came from. End with a question like who you'd go with.",
   explainer: "hook line with a surprising fact, then 2-4 short paragraphs telling the story (what it is, where it comes from, what makes it special). End with a question to invite comments. Mention the source name.",
 };
 

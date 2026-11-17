@@ -112,7 +112,7 @@ function eventPosterHtml(o: { headline: string; subline: string; source: string;
     <h1>${esc(o.headline)}</h1>
     <div class="sub">${esc(o.subline)}</div>
     ${where ? `<div class="where"><span>📍</span><span>${esc(where)}</span></div>` : ""}
-    <div class="foot"><span>${team.language.toLowerCase() === "bangla" ? "সূত্র" : "Source"}: ${esc(o.source)}</span><span>${esc(b.handle)}</span></div>
+    <div class="foot"><span>${o.event.organizer ? `${team.language.toLowerCase() === "bangla" ? "আয়োজক" : "Organizer"}: ${esc(o.event.organizer)}` : ""}</span><span>${esc(b.handle)}</span></div>
   </div>
 </body></html>`;
 }
