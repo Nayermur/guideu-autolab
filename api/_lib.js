@@ -173,3 +173,19 @@ export async function tenantSecrets(tenant, profile) {
 
 /** Sends an error from a server function with the right status. */
 export const fail = (res, e) => send(res, e.status || 500, { error: e.message });
+
+/** Reads a JSON file, changes it with `fn(json)` and writes it back (fails safely if someone else changed it meanwhile). */
+export async function updateDataJson(path, fallback, fn, message) {
+  const file = await readDataFile(path);
+  const json = file?.json ?? structuredClone(fallback);
+  const result = await fn(json);
+  await writeDataFile(path, JSON.stringify(json, null, 2) + "\n", message, file?.sha);
+  return result ?? json;
+}
+
+export const randomCode = (len = 24) => {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  return Array.from(crypto.getRandomValues(new Uint8Array(len)), (b) => chars[b % chars.length]).join("");
+};
+
+export const TENANT_ID_RE = /^[a-z0-9][a-z0-9-]{1,30}$/;

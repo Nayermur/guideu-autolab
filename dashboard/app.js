@@ -63,6 +63,8 @@ async function whoAmI() {
   if (r?.status === 401) return location.replace("/login");
   me = r?.ok ? await r.json() : null;
   if (!me?.tenant) throw new Error("Could not load your account");
+  // A new customer finishes Setup first.
+  if (me.status === "setup") return location.replace("/setup");
   BASE = `t/${me.tenant}/`;
   renderAccount();
 }
@@ -70,6 +72,8 @@ async function whoAmI() {
 function renderAccount() {
   const box = $("#account");
   if (!box) return;
+  const links = $("#pageLinks");
+  if (links) links.innerHTML = `<a href="/setup">সেটআপ</a>${me.role === "admin" ? ' · <a href="/admin">অ্যাডমিন</a>' : ""} · `;
   if (me.role === "admin" && me.tenants?.length > 1) {
     box.innerHTML = `<select id="tenantPick" aria-label="কাস্টমার">${me.tenants
       .map((t) => `<option value="${esc(t.id)}"${t.id === me.tenant ? " selected" : ""}>${esc(t.name)}${t.status === "active" ? "" : " (বন্ধ)"}</option>`)

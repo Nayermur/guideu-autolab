@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>AutoLab Setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="pages.css">
+</head>
+<body>
+  <main class="wrap">
+    <div class="head">
+      <div class="brand"><span class="dot"></span>AUTOLAB</div>
+      <div><a href="/" id="toDash">ড্যাশবোর্ডে যান →</a> · <a href="/api/logout">লগআউট</a></div>
+    </div>
+
+    <div>
+      <h1>সেটআপ</h1>
+      <p class="muted" id="intro">আপনার পেজ, বিষয় আর কী-গুলো দিন। প্রতিটার পাশে “কীভাবে নেবো?” চাপলে ধাপে ধাপে দেখাবে, আর “পরীক্ষা করুন” চাপলে সাথে সাথে বোঝা যাবে ঠিক আছে কিনা।</p>
+    </div>
+    <div class="msg" id="statusMsg"></div>
+
+    <!-- Page -->
+    <section class="card">
+      <h2>১. আপনার পেজ</h2>
+      <div class="grid2">
+        <label>পেজ / কোম্পানির নাম <input id="brandName" maxlength="80" required></label>
+        <label>Instagram হ্যান্ডেল <input id="brandHandle" maxlength="40" placeholder="@yourpage" required></label>
+      </div>
+    </section>
+
+    <!-- Niches -->
+    <section class="card">
+      <h2>২. কোন বিষয়ে পোস্ট হবে</h2>
+      <p class="hint">টিম এই বিষয়গুলো পালা করে খুঁজবে আর পোস্ট বানাবে।</p>
+      <div class="checks" id="niches"></div>
+    </section>
+
+    <!-- Gemini -->
+    <section class="card">
+      <h2>৩. Gemini API Key <span class="pill" data-pill="gemini"></span></h2>
+      <p class="hint">টিমের লেখা আর আপনার সহকারী পাখি এই কী দিয়ে চলে। ফ্রি প্ল্যানেই হবে।</p>
+      <label>API Key <input id="geminiKey" type="password" autocomplete="off" spellcheck="false"></label>
+      <details>
+        <summary>কীভাবে নেবো?</summary>
+        <ol>
+          <li><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> খুলুন, আপনার Google অ্যাকাউন্ট দিয়ে লগইন করুন।</li>
+          <li><b>Create API key</b> চাপুন (প্রজেক্ট চাইলে নতুন একটা বানিয়ে নিন)।</li>
+          <li>যে কী দেখাবে সেটা কপি করে ওপরের ঘরে বসান।</li>
+        </ol>
+      </details>
+      <div class="actions"><button class="ghost" data-test="gemini">পরীক্ষা করুন</button></div>
+      <div class="msg" data-out="gemini"></div>
+    </section>
+
+    <!-- Instagram -->
+    <section class="card">
+      <h2>৪. Instagram <span class="pill" data-pill="instagram"></span></h2>
+      <p class="hint">আপনি approve করলে পোস্ট এই অ্যাকাউন্টে নিজে থেকে চলে যাবে।</p>
+      <label>Access Token <input id="igToken" type="password" autocomplete="off" spellcheck="false"></label>
+      <label>IG User ID
+        <div class="row"><input id="igUserId" inputmode="numeric" spellcheck="false"><button class="ghost" id="findIg" type="button">খুঁজে দাও</button></div>
+      </label>
+      <div class="pick" id="igPick"></div>
+      <details>
+        <summary>কীভাবে নেবো?</summary>
+        <ol>
+          <li>আপনার Instagram অ্যাকাউন্ট <b>Professional</b> (Business বা Creator) হতে হবে, আর একটা Facebook পেজের সাথে যুক্ত থাকতে হবে।</li>
+          <li><a href="https://business.facebook.com" target="_blank" rel="noopener">business.facebook.com</a>-এ একটা Business portfolio খুলুন (না থাকলে বানান), সেখানে Facebook পেজ আর Instagram অ্যাকাউন্ট যোগ করুন।</li>
+          <li><a href="https://developers.facebook.com/apps" target="_blank" rel="noopener">developers.facebook.com/apps</a> → <b>Create App</b> → টাইপ <b>Business</b> → আপনার portfolio বেছে নিন।</li>
+          <li>অ্যাপে <b>Instagram</b> প্রোডাক্ট যোগ করুন → <b>API setup with Facebook login</b>।</li>
+          <li>business.facebook.com → <b>Settings → Users → System users</b> → <b>Add</b> (Admin)। তারপর <b>Assign assets</b>: অ্যাপ, Facebook পেজ আর Instagram অ্যাকাউন্ট (Full control)।</li>
+          <li>সেই System user → <b>Generate new token</b> → আপনার অ্যাপ → Expiration: <b>Never</b> → permission: <code>instagram_basic</code>, <code>instagram_content_publish</code>, <code>pages_show_list</code>, <code>pages_read_engagement</code>, <code>business_management</code> → Generate → টোকেন কপি করে ওপরে বসান।</li>
+          <li>এরপর <b>খুঁজে দাও</b> চাপুন, আপনার Instagram অ্যাকাউন্টটা বেছে নিন। IG User ID নিজে থেকে বসে যাবে।</li>
+        </ol>
+        <p class="hint">আটকে গেলে আমাদের জানান, আমরা সাথে থেকে করে দেব।</p>
+      </details>
+      <div class="actions"><button class="ghost" data-test="instagram">পরীক্ষা করুন</button></div>
+      <div class="msg" data-out="instagram"></div>
+    </section>
+
+    <!-- Telegram -->
+    <section class="card">
+      <h2>৫. Telegram <span class="pill" data-pill="telegram"></span></h2>
+      <p class="hint">প্রতিটা নতুন পোস্টের ড্রাফট Approve / Reject বাটনসহ আপনার Telegram-এ আসবে।</p>
+      <label>Bot Token <input id="telegramToken" type="password" autocomplete="off" spellcheck="false" placeholder="123456789:AAH..."></label>
+      <label>Chat ID
+        <div class="row"><input id="telegramChatId" inputmode="numeric" spellcheck="false"><button class="ghost" id="findChat" type="button">খুঁজে দাও</button></div>
+      </label>
+      <div class="pick" id="chatPick"></div>
+      <details>
+        <summary>কীভাবে নেবো?</summary>
+        <ol>
+          <li>Telegram-এ <a href="https://t.me/BotFather" target="_blank" rel="noopener">@BotFather</a> খুলুন, <code>/newbot</code> লিখে পাঠান।</li>
+          <li>বটের একটা নাম দিন, তারপর একটা username (শেষে অবশ্যই <code>bot</code> থাকবে, যেমন <code>mypage_post_bot</code>)।</li>
+          <li>BotFather একটা টোকেন দেবে (দেখতে <code>123456789:AAH...</code>)। পুরোটা কপি করে ওপরের ঘরে বসান।</li>
+          <li>BotFather যে লিংক দিয়েছে সেটা দিয়ে আপনার নতুন বটটা খুলুন, <b>Start</b> চাপুন, একটা মেসেজ (যেমন <code>hi</code>) পাঠান।</li>
+          <li>এখানে ফিরে <b>খুঁজে দাও</b> চাপুন, আপনার নামটা বেছে নিন। Chat ID নিজে থেকে বসে যাবে।</li>
+          <li><b>পরীক্ষা করুন</b> চাপলে বট আপনাকে একটা মেসেজ পাঠাবে।</li>
+        </ol>
+      </details>
+      <div class="actions"><button class="ghost" data-test="telegram">পরীক্ষা করুন</button></div>
+      <div class="msg" data-out="telegram"></div>
+    </section>
+
+    <div class="sticky">
+      <div class="msg" id="saveMsg"></div>
+      <button id="save">সেভ করুন</button>
+    </div>
+  </main>
+  <script type="module" src="setup.js"></script>
+</body>
+</html>

@@ -10,11 +10,13 @@ export const config = {
 };
 
 const PUBLIC_PATHS = new Set(["/login", "/login.html"]);
+// Invitation page: open without a login (api/join.js checks the invitation code).
+const JOIN_PATHS = new Set(["/join", "/join.html"]);
 // Post images whose file name carries a 24-character random token are public, because
 // Instagram must download them to publish. The token makes the URLs impossible to guess.
 const PUBLIC_IMAGE = /^\/t\/[a-z0-9-]+\/output\/[A-Za-z0-9-]+-[A-Za-z0-9]{24}\.png$/;
 // Server functions that work without a login (they check their own secret or password).
-const PUBLIC_API = new Set(["/api/login", "/api/telegram"]);
+const PUBLIC_API = new Set(["/api/login", "/api/telegram", "/api/join"]);
 
 const next = () => new Response(null, { headers: { "x-middleware-next": "1" } });
 const redirect = (url, headers = {}) => new Response(null, { status: 303, headers: { Location: url, ...headers } });
@@ -27,7 +29,7 @@ export default async function middleware(request) {
   }
 
   if (url.pathname === "/api/logout") return redirect("/login", { "Set-Cookie": clearCookie() });
-  if (PUBLIC_IMAGE.test(url.pathname) || PUBLIC_API.has(url.pathname)) return next();
+  if (PUBLIC_IMAGE.test(url.pathname) || PUBLIC_API.has(url.pathname) || JOIN_PATHS.has(url.pathname)) return next();
 
   const session = await readSession(AUTH_SECRET, request.headers.get("cookie"));
 
@@ -38,6 +40,8 @@ export default async function middleware(request) {
     return redirect("/login");
   }
 
+  // The admin page is only for the admin.
+  if ((url.pathname === "/admin" || url.pathname === "/admin.html") && session.role !== "admin") return redirect("/");
   // A customer's files are only for that customer.
   const own = url.pathname.match(/^\/t\/([^/]+)\//);
   if (own && own[1] !== session.tenant) return new Response("Forbidden", { status: 403 });
