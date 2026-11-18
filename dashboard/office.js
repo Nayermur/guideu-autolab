@@ -5,6 +5,21 @@ const W = 400, H = 262;          // low-res world size; CSS scales it up with pi
 const TW = 32, TH = 16;          // isometric tile size
 const OX = 200, OY = 90;         // screen position of grid corner (0,0)
 const WALL = 78;                 // wall height in px
+const S = 3;                     // the canvas has 3 real pixels per office pixel, so sprite art keeps its detail
+
+// ---------- character art from sprite sheets (dashboard/sprites/) ----------
+// Each sheet holds front, back and six walking frames (facing right), drawn 3x larger than an office pixel.
+const SPRITES = {};
+fetch("sprites/sprites.json")
+  .then((r) => (r.ok ? r.json() : {}))
+  .then((meta) => {
+    for (const [name, m] of Object.entries(meta)) {
+      const img = new Image();
+      img.onload = () => { SPRITES[name] = { ...m, img }; };
+      img.src = `sprites/${name}.png`;
+    }
+  })
+  .catch(() => {});
 
 export const iso = (gx, gy, z = 0) => [OX + (gx - gy) * (TW / 2), OY + (gx + gy) * (TH / 2) - z];
 
@@ -33,10 +48,10 @@ function box(ctx, gx, gy, w, d, h, color, z0 = 0) {
 
 // ---------- agents' looks and desks ----------
 export const LOOKS = {
-  scout:    { skin: "#f1c27d", hair: "#3b2416", shirt: "#4f9d69", pants: "#2f3b52", hat: "#c9a227", accent: "#7ee081" },
+  scout:    { sprite: "rafi", skin: "#f1c27d", hair: "#3b2416", shirt: "#4f9d69", pants: "#2f3b52", hat: "#c9a227", accent: "#7ee081" },
   verifier: { skin: "#e0ac69", hair: "#111111", shirt: "#6c8cff", pants: "#2b2b3d", glasses: true, accent: "#8fb3ff" },
   writer:   { skin: "#c68642", hair: "#1d1d1d", shirt: "#f2f2f2", pants: "#39424e", beanie: "#e4572e", accent: "#ffd166" },
-  designer: { skin: "#f5d0b0", hair: "#b5179e", shirt: "#ff8fab", pants: "#3a2e5c", headphones: true, accent: "#ff8fab" },
+  designer: { sprite: "mitu", skin: "#f5d0b0", hair: "#b5179e", shirt: "#ff8fab", pants: "#3a2e5c", headphones: true, accent: "#ff8fab" },
   critic:   { skin: "#8d5524", hair: "#2a1a10", shirt: "#ef476f", pants: "#22223b", cap: "#22223b", accent: "#ff6b81" },
 };
 
@@ -51,7 +66,7 @@ const HQ_DESKS = {
 
 // ---------- rooms ----------
 // Pakhi, the owner's assistant (My Office Room).
-export const PAKHI_LOOK = { skin: "#e8b98a", hair: "#1a1a1a", longHair: true, dress: "#14b8a6", shirt: "#14b8a6", pants: "#14b8a6", flower: "#ff6b9d", accent: "#5eead4" };
+export const PAKHI_LOOK = { sprite: "pakhi", skin: "#e8b98a", hair: "#1a1a1a", longHair: true, dress: "#14b8a6", shirt: "#14b8a6", pants: "#14b8a6", flower: "#ff6b9d", accent: "#5eead4" };
 const OFFICE_DESKS = { pakhi: { gx: 4.0, gy: 0.6, w: 1.9, d: 0.9, seat: [4.95, 2.05], prop: "typewriter" } };
 
 // Desk slots for Specialised Team bots, in the order bots are added.
@@ -286,9 +301,38 @@ function px(ctx, x, y, w, h, c) {
   ctx.fillRect(Math.round(x), Math.round(y), w, h);
 }
 
+/**
+ * Draws a character from its sprite sheet with feet at (x, y): walking frames while moving (mirrored when
+ * going left), the front view while standing, and the back view (upper body, behind the desk) while seated.
+ */
+function drawSprite(ctx, x, y, sp, { back, seated, typing, moving, left, t }) {
+  ctx.fillStyle = "rgba(0,0,0,0.22)";
+  ctx.fillRect(Math.round(x) - 5, Math.round(y) - 1, 11, 2);
+  const key = moving && !seated ? `walk${Math.floor(t / 110) % 6}` : back ? "back" : "front";
+  const [sx, sy, sw, sh] = sp.frames[key];
+  const w = sw / sp.scale, h = sh / sp.scale;
+  ctx.save();
+  if (seated) {
+    // Sitting: only the upper body shows above the chair; a small bob while typing.
+    const keep = Math.round(sh * 0.62);
+    const bob = typing && Math.floor(t / 150) % 2 ? 1 / S : 0;
+    ctx.drawImage(sp.img, sx, sy, sw, keep, x - w / 2, y - 5 - keep / sp.scale - bob, w, keep / sp.scale);
+  } else if (left && moving) {
+    ctx.translate(Math.round(x * S) / S, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(sp.img, sx, sy, sw, sh, -w / 2, y - h, w, h);
+  } else {
+    ctx.drawImage(sp.img, sx, sy, sw, sh, Math.round((x - w / 2) * S) / S, y - h, w, h);
+  }
+  ctx.restore();
+}
+
 /** Draws a 10×18 pixel person with feet at (x, y). */
-function drawPerson(ctx, x, y, look, { frame = 0, back = false, seated = false, typing = false, t = 0 }) {
+function drawPerson(ctx, x, y, look, opts) {
+  const { frame = 0, back = false, seated = false, typing = false, t = 0 } = opts;
   x = Math.round(x); y = Math.round(y);
+  const sp = look.sprite && SPRITES[look.sprite];
+  if (sp) return drawSprite(ctx, x, y, sp, opts);
   // shadow
   ctx.fillStyle = "rgba(0,0,0,0.22)";
   ctx.fillRect(x - 4, y - 1, 9, 2);
@@ -354,8 +398,10 @@ export class Office {
   constructor(canvas, onLayout, scene = makeScene("hq")) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
-    canvas.width = W;
-    canvas.height = H;
+    canvas.width = W * S;
+    canvas.height = H * S;
+    this.ctx.setTransform(S, 0, 0, S, 0, 0);
+    this.ctx.imageSmoothingEnabled = false;
     this.onLayout = onLayout;    // callback(list of {key, x, y}) for DOM name tags
     this.agents = {};            // key -> { status, activity }
     this.setScene(scene);
@@ -402,6 +448,7 @@ export class Office {
       const speed = this.reduced ? 100 : 1.3 * (dt / 1000);
       if (dist <= speed) {
         p.gx = p.target[0]; p.gy = p.target[1];
+        p.moving = false;
         if (atDesk) p.seated = true;
         else { p.target = null; p.wait = 2500 + Math.random() * 5000; }
       } else {
@@ -409,6 +456,8 @@ export class Office {
         p.seated = false;
         p.frame = Math.floor(t / 180);
         p.back = dy < 0 || (Math.abs(dy) < 0.01 && dx < 0);
+        p.moving = true;
+        p.left = dx - dy < 0; // moving left on screen
       }
     }
   }
@@ -439,6 +488,8 @@ export class Office {
             back: p.seated ? seatedBack : p.back,
             seated: p.seated,
             typing: p.seated && status === "working",
+            moving: p.moving,
+            left: p.left,
             t,
           });
           tags.push({ key: p.key, x: x / W, y: (y - (p.seated ? 29 : 26)) / H });
