@@ -63,7 +63,9 @@ async function fromWikimedia(query: string): Promise<FoundImage | null> {
     if (!info || !/image\/(jpeg|png)/.test(info.mime) || info.width < 800 || !OK_LICENSE.test(license)) continue;
     const img = await download(info.thumburl || info.url).catch(() => null);
     if (!img) continue;
-    const artist = stripTags(meta.Artist?.value).slice(0, 40) || "Unknown";
+    // Commons sometimes writes "No machine-readable author provided. <name> assumed..."; keep just the name.
+    const rawArtist = stripTags(meta.Artist?.value).replace(/No machine-readable author provided\.?\s*/i, "").replace(/\s+assumed.*$/i, "");
+    const artist = rawArtist.slice(0, 40) || "Unknown";
     return { ...img, source: "wikimedia", kind: "real", credit: `ছবি: ${artist} / Wikimedia Commons (${license})` };
   }
   return null;
@@ -71,8 +73,14 @@ async function fromWikimedia(query: string): Promise<FoundImage | null> {
 
 // ---------- Openverse ----------
 async function fromOpenverse(query: string): Promise<FoundImage | null> {
-  const params = new URLSearchParams({ q: query, license: "cc0,pdm,by,by-sa", page_size: "12", mature: "false", aspect_ratio: "tall,square,wide" });
-  const r = await fetch(`https://api.openverse.org/v1/images/?${params}`, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(20_000) });
+  const params = new URLSearchParams({ q: query, license: "cc0,pdm,by,by-sa", page_size: "12", mature: "false" });
+  const url = `https://api.openverse.org/v1/images/?${params}`;
+  // Openverse is sometimes slow (504); one quick retry before moving on to the next source.
+  let r = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(25_000) }).catch(() => null);
+  if (!r || r.status >= 500) {
+    await new Promise((res) => setTimeout(res, 3000));
+    r = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(25_000) });
+  }
   if (!r.ok) throw new Error(`Openverse HTTP ${r.status}`);
   for (const it of ((await r.json())?.results ?? []) as any[]) {
     if ((it.width ?? 0) < 800) continue;
