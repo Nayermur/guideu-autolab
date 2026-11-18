@@ -3,7 +3,7 @@ import { generate } from "./llm.js";
 import { runCycle, decide, syncApprovals, retry, runInbox, runBot } from "./pipeline.js";
 import { instagramEnabled, publishApproved } from "./instagram.js";
 import { loadState } from "./store.js";
-import { processTelegramUpdates, testTelegram } from "./telegram.js";
+import { processTelegramUpdates, testTelegram, telegramDebug } from "./telegram.js";
 import { fetchSource } from "./sources.js";
 
 const [cmd = "help", arg] = process.argv.slice(2);
@@ -53,6 +53,7 @@ async function main() {
     }
     case "test-telegram": {
       console.log(await testTelegram());
+      for (const line of await telegramDebug(loadState().telegramOffset)) console.log(line);
       break;
     }
     case "inbox": {

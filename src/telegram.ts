@@ -123,3 +123,20 @@ export async function testTelegram(): Promise<string> {
   });
   return `Token OK (bot @${me.username}), test message sent to chat ${String(env.telegramChatId).slice(0, 3)}…`;
 }
+
+/** Read-only look at the bot's update queue, to find out why button presses are not arriving. */
+export async function telegramDebug(offset: number): Promise<string[]> {
+  const out: string[] = [];
+  const hook = await api("getWebhookInfo", {});
+  out.push(`webhook: ${hook.url ? `SET to ${hook.url}` : "none"} · pending updates: ${hook.pending_update_count ?? "?"}${hook.last_error_message ? ` · last error: ${hook.last_error_message}` : ""}`);
+  // Peek at pending updates without confirming them (no offset beyond what was already processed).
+  const updates: any[] = await api("getUpdates", { offset, timeout: 0, limit: 20 });
+  out.push(`updates waiting (from offset ${offset}): ${updates.length}`);
+  for (const u of updates) {
+    const kind = Object.keys(u).filter((k) => k !== "update_id").join(",");
+    const chat = u.callback_query?.message?.chat?.id ?? u.message?.chat?.id;
+    const same = chat !== undefined ? (String(chat) === String(env.telegramChatId) ? "your chat" : "OTHER chat") : "?";
+    out.push(`  #${u.update_id} ${kind} · ${same}${u.callback_query ? ` · data=${u.callback_query.data}` : ""}${u.message?.text ? ` · text=${String(u.message.text).slice(0, 20)}` : ""}`);
+  }
+  return out;
+}
