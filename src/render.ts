@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { ROOT, team } from "./config.js";
+import { OUTPUT_DIR, team } from "./config.js";
 import { randomToken } from "./store.js";
 import type { DesignBrief } from "./agents.js";
 import type { EventInfo } from "./sources.js";
@@ -179,7 +179,7 @@ function photoPosterHtml(o: { headline: string; subline: string; source: string;
 export async function renderPost(id: string, html: string): Promise<string> {
   // Instagram downloads the image from a public URL, so the file name carries an unguessable token.
   id = `${id}-${randomToken()}`;
-  const dir = resolve(ROOT, "output");
+  const dir = OUTPUT_DIR;
   mkdirSync(dir, { recursive: true });
   const htmlPath = resolve(dir, `${id}.html`);
   writeFileSync(htmlPath, html);

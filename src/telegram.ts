@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
-import { env, ROOT, findNiche } from "./config.js";
+import { env, TENANT_DIR, findNiche } from "./config.js";
 import { log, saveState, type Draft, type State } from "./store.js";
 
 /**
@@ -112,7 +112,7 @@ export async function processTelegramUpdates(state: State) {
 export async function resendUnsent(state: State) {
   if (!telegramEnabled()) return;
   for (const d of state.drafts.filter((x) => x.status === "pending" && !x.telegramMessageId)) {
-    const imagePath = d.imagePath ? resolve(ROOT, d.imagePath) : undefined;
+    const imagePath = d.imagePath ? resolve(TENANT_DIR, d.imagePath) : undefined;
     d.telegramMessageId = await sendDraft({ ...d, imagePath });
     log(state, "system", `Sent draft ${d.id} to Telegram`);
     saveState(state);

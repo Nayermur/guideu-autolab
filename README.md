@@ -144,6 +144,24 @@ Mitu পোস্টের বিষয় পড়ে একটা সার�
 - niche অনুযায়ী উৎসের ক্রম `team.json`-এর `imageSources`-এ বদলানো যায়। সব বন্ধ করতে `"backgroundImages": false` দিন।
 - উৎসগুলো পরীক্ষা করতে workflow-এর `test-images` mode চালান।
 
+## কাস্টমার (একাধিক পেজ)
+
+একই টিম একাধিক কাস্টমারের পেজের জন্য কাজ করতে পারে। প্রাইভেট ডাটা রিপোতে প্রতিটা কাস্টমারের আলাদা ফোল্ডার:
+
+```
+tenants/index.json              কাস্টমারের তালিকা (id, নাম, active/paused)
+tenants/<id>/settings.json      পেজের নাম, হ্যান্ডেল, হ্যাশট্যাগ, কোন নিশ
+tenants/<id>/secrets.json       কাস্টমারের নিজের কী (Instagram, Telegram, Gemini) — এনক্রিপ্ট করা
+tenants/<id>/data/              টিমের মেমরি (ড্রাফট, লগ, পাখির ইনবক্স, বট)
+tenants/<id>/output/            পোস্টের ছবি
+```
+
+- নিশ, এজেন্ট আর ডিজাইন সবার জন্য এক (`team.json`); কাস্টমারের `settings.json` শুধু নিজের অংশ বদলায়।
+- কী-গুলো `TENANT_SECRETS_KEY` (৩২ বাইট, base64; GitHub secret ও Vercel-এ) দিয়ে AES-256-GCM-এ তালাবদ্ধ থাকে।
+- পেজ মালিকের নিজের টেন্যান্ট (`"owner": true`) GitHub secrets-এর কী ব্যবহার করতে পারে; অন্য কোনো কাস্টমার কখনো সেগুলো পায় না।
+- ওয়ার্কফ্লোর `tenant` ইনপুট খালি থাকলে সব active কাস্টমারের কাজ আলাদা আলাদা জবে একসাথে চলে।
+- লোকালি: `TENANT=<id> npm run status`, `npm run tenants`, `TENANT=<id> npm run save-secrets < keys.json`
+
 ## নিজের মতো সাজান: `team.json`
 
 কোড না ছুঁয়েই বদলানো যায়:

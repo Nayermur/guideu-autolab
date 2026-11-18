@@ -1,4 +1,6 @@
-import { team, env, enabledNiches } from "./config.js";
+import { team, env, enabledNiches, TENANT, TENANT_DIR, tenantInfo, listTenants } from "./config.js";
+import { saveTenantSecrets } from "./secrets.js";
+import { readFileSync } from "node:fs";
 import { generate } from "./llm.js";
 import { runCycle, decide, syncApprovals, retry, runInbox, runBot } from "./pipeline.js";
 import { instagramEnabled, publishApproved } from "./instagram.js";
@@ -18,6 +20,7 @@ async function main() {
     }
     case "status": {
       const s = loadState();
+      console.log(`Customer ${TENANT} (${tenantInfo.name})`);
       console.log(`Team ${team.teamName}  ·  last run: ${s.lastRunAt ?? "never"}  ·  AI: Gemini\n`);
       for (const [key, a] of Object.entries(team.agents)) {
         const st = s.agents[key];
@@ -120,6 +123,20 @@ async function main() {
       }
       break;
     }
+    case "tenants": {
+      for (const t of listTenants()) console.log(`${t.id.padEnd(16)} ${t.status.padEnd(7)} ${t.owner ? "owner  " : "       "} ${t.name}`);
+      break;
+    }
+    case "save-secrets": {
+      // Reads the customer's keys as JSON from stdin and stores them encrypted (needs TENANT_SECRETS_KEY).
+      const data = JSON.parse(readFileSync(0, "utf8"));
+      const allowed = ["geminiKey", "telegramToken", "telegramChatId", "igUserId", "igToken", "igGraphHost"];
+      const bad = Object.keys(data).filter((k) => !allowed.includes(k));
+      if (bad.length) throw new Error(`Unknown keys: ${bad.join(", ")}`);
+      saveTenantSecrets(TENANT_DIR, data);
+      console.log(`Saved ${Object.keys(data).length} key(s) for ${TENANT}`);
+      break;
+    }
     case "niches": {
       const s = loadState();
       const list = enabledNiches();
@@ -136,6 +153,7 @@ async function main() {
     }
     default:
       console.log(`AutoLab commands:
+  (every command works for one customer: TENANT=<id>, default guideu)
   npm run run                    run one shift of the team
   npm run status                 show what each agent is doing
   npm run list [-- all|approved] show drafts (default: pending)
@@ -146,6 +164,8 @@ async function main() {
   npm run inbox                  turn Pakhi's requests into drafts
   npm run bot -- <id>            run one Specialised Team bot now
   npm run sync                   sync Telegram + publish approved posts to Instagram
+  npm run tenants                list customers
+  npm run save-secrets < keys.json   store a customer's keys encrypted
   npm run publish                publish approved posts to Instagram now
   npm run retry -- <id>          try publishing a failed post again
   npm run check-feeds            test every source of every niche (NICHE=id for one)

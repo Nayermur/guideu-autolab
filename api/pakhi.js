@@ -4,7 +4,7 @@
 // When the owner's notes are complete, Pakhi saves a request (and the photos) to the data repo
 // and starts the team, where Sabbir (Writer) takes over.
 
-import { env, send, gemini, writeDataFile, startWorkflow, newId } from "./_lib.js";
+import { env, send, gemini, writeDataFile, startWorkflow, newId, tenantPath } from "./_lib.js";
 
 const SYSTEM = `You are Pakhi (পাখি), the friendly female personal assistant of the owner of the Instagram page "GuideU BD" (@guideu.bd).
 You always reply in natural, warm Bangla, short and clear.
@@ -65,7 +65,7 @@ export default async function handler(req, res) {
     for (const [i, img] of images.entries()) {
       const ext = img.mimeType === "image/png" ? "png" : img.mimeType === "image/webp" ? "webp" : "jpg";
       const path = `inbox/${id}/${i + 1}.${ext}`;
-      await writeDataFile(`data/${path}`, Buffer.from(img.data, "base64"), `Pakhi: photo ${i + 1} for ${id}`);
+      await writeDataFile(tenantPath(`data/${path}`), Buffer.from(img.data, "base64"), `Pakhi: photo ${i + 1} for ${id}`);
       imagePaths.push(path);
     }
     const r = out.request;
@@ -82,7 +82,7 @@ export default async function handler(req, res) {
       images: imagePaths,
     };
     if (!request.facts.length) request.facts = [request.details];
-    await writeDataFile(`data/inbox/${id}.json`, JSON.stringify(request, null, 2) + "\n", `Pakhi: request ${id}`);
+    await writeDataFile(tenantPath(`data/inbox/${id}.json`), JSON.stringify(request, null, 2) + "\n", `Pakhi: request ${id}`);
     await startWorkflow({ mode: "inbox" });
     return send(res, 200, { reply, ready: true, requestId: id });
   } catch (e) {

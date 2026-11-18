@@ -1,15 +1,16 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
-import { ROOT, type Niche, type SourceConfig } from "./config.js";
+import { DATA_DIR, type Niche, type SourceConfig } from "./config.js";
 import type { EventInfo } from "./sources.js";
 
 /**
- * Data written by the dashboard (via its server functions) into the private data repo:
+ * Data written by the dashboard (via its server functions) into the customer's folder in the private data repo
+ * (tenants/<id>/data):
  *  - data/inbox/<id>.json + data/inbox/<id>/<n>.jpg : requests Pakhi organized from the owner's chat
  *  - data/bots.json                                  : Specialised Team bots the owner added
  */
 
-const DATA = resolve(ROOT, "data");
+const DATA = DATA_DIR;
 
 // ---------- Pakhi's inbox ----------
 export interface InboxRequest {

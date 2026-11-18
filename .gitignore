@@ -9,3 +9,4 @@ public/
 # Team memory lives in the private data repo (see README), never in this repo
 data/
 output/
+tenants/

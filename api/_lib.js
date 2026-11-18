@@ -6,6 +6,9 @@
 //   DASHBOARD_GITHUB_TOKEN  fine-grained token: data repo Contents read/write + code repo Actions read/write
 //   DATA_REPO               e.g. "your-name/autolab-data"
 //   CODE_REPO               e.g. "your-name/autolab"
+//   DEFAULT_TENANT          the customer this dashboard works for (default "guideu")
+//
+// Each customer's files live in the data repo under tenants/<id>/ (data/, output/, settings.json, secrets.json).
 
 export const env = {
   geminiKey: process.env.GEMINI_API_KEY || "",
@@ -13,7 +16,11 @@ export const env = {
   githubToken: process.env.DASHBOARD_GITHUB_TOKEN || "",
   dataRepo: process.env.DATA_REPO || "",
   codeRepo: process.env.CODE_REPO || "",
+  tenant: process.env.DEFAULT_TENANT || "guideu",
 };
+
+/** Path of a file in a customer's folder in the data repo, e.g. tenantPath("data/bots.json"). */
+export const tenantPath = (path, tenant = env.tenant) => `tenants/${tenant}/${path}`;
 
 export function send(res, status, body) {
   res.status(status).setHeader("Content-Type", "application/json; charset=utf-8");
@@ -105,11 +112,11 @@ export async function writeDataFile(path, content, message, sha) {
   });
 }
 
-/** Starts the team workflow now, e.g. {mode: "inbox"} or {mode: "bot", bot: "id"}. */
-export async function startWorkflow(inputs) {
+/** Starts the team workflow now for one customer, e.g. {mode: "inbox"} or {mode: "bot", bot: "id"}. */
+export async function startWorkflow(inputs, tenant = env.tenant) {
   await github(`/repos/${env.codeRepo}/actions/workflows/team.yml/dispatches`, {
     method: "POST",
-    body: JSON.stringify({ ref: "main", inputs: { niche: "auto", bot: "", ...inputs } }),
+    body: JSON.stringify({ ref: "main", inputs: { niche: "auto", bot: "", tenant, ...inputs } }),
   });
 }
 
@@ -122,7 +129,7 @@ export async function recordDecision({ draftId, decision, via, chatId }) {
   if (!["approved", "rejected"].includes(decision)) throw new Error("Bad decision");
   const at = new Date().toISOString();
   const body = { draftId, decision, at, via, ...(chatId ? { chatId: String(chatId) } : {}) };
-  await writeDataFile(`data/decisions/${draftId}-${Date.now()}.json`, JSON.stringify(body, null, 2) + "\n", `${decision} ${draftId} (${via})`);
+  await writeDataFile(tenantPath(`data/decisions/${draftId}-${Date.now()}.json`), JSON.stringify(body, null, 2) + "\n", `${decision} ${draftId} (${via})`);
   await startWorkflow({ mode: "telegram" });
   return body;
 }

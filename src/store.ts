@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { ROOT, type AgentKey } from "./config.js";
+import { DATA_DIR, type AgentKey } from "./config.js";
 import type { EventInfo } from "./sources.js";
 
 /**
@@ -64,7 +64,6 @@ export interface State {
   usedTopics?: string[];
 }
 
-const DATA_DIR = resolve(ROOT, "data");
 const STATE_FILE = resolve(DATA_DIR, "state.json");
 
 export function loadState(): State {

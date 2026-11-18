@@ -52,18 +52,21 @@ function demoState() {
 }
 
 // ---------- data ----------
+// Each customer's files are under t/<id>/ on this site (see scripts/build-dashboard.mjs).
+const TENANT = "guideu";
+const BASE = `t/${TENANT}/`;
 const getJson = (url) => fetch(`${url}?t=${Date.now()}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 
 async function load() {
   if (!team) team = await getJson("team.json");
-  let s = await getJson("data/state.json");
+  let s = await getJson(BASE + "data/state.json");
   if (!s || !s.lastRunAt) s = demoState();
   for (const a of Object.values(s.agents ?? {})) {
     if (a.status === "working" && Date.now() - Date.parse(a.updatedAt) > STALE_MS) a.status = "idle";
   }
   state = s;
-  bots = (await getJson("data/bots.json"))?.bots ?? bots;
-  inbox = (await getJson("data/inbox-index.json"))?.requests ?? inbox;
+  bots = (await getJson(BASE + "data/bots.json"))?.bots ?? bots;
+  inbox = (await getJson(BASE + "data/inbox-index.json"))?.requests ?? inbox;
   render();
 }
 
@@ -189,7 +192,7 @@ async function decide(id, decision, btn) {
 }
 
 function draftCard(d) {
-  const img = d.imagePath ? `<img src="${esc(d.imagePath)}" alt="" loading="lazy">` : `<div class="noimg"></div>`;
+  const img = d.imagePath ? `<img src="${esc(BASE + d.imagePath)}" alt="" loading="lazy">` : `<div class="noimg"></div>`;
   return `<button class="draft" data-id="${esc(d.id)}">${img}<div>
     <h3>${esc(d.headline)}</h3>
     <div class="sub">${esc(d.subline)}</div>
@@ -233,7 +236,7 @@ function openDraft(id) {
   const full = `${d.caption}\n\n${(d.hashtags ?? []).join(" ")}`;
   const own = d.niche === "office";
   $("#dialogBody").innerHTML = `<div class="detail">
-    <div>${d.imagePath ? `<img src="${esc(d.imagePath)}" alt="${esc(d.headline)}">` : ""}</div>
+    <div>${d.imagePath ? `<img src="${esc(BASE + d.imagePath)}" alt="${esc(d.headline)}">` : ""}</div>
     <div>
       <div class="chips"><span class="chip niche">${esc(nicheName(d.niche))}</span><span class="chip ${esc(d.status)}">${esc(d.status)}</span><span class="chip score">Critic ${bn(d.critic?.score ?? "–")}/১০</span><span class="chip">রিভিশন ${bn(d.critic?.revisions ?? 0)}</span></div>
       <h2>${esc(d.headline)}</h2>

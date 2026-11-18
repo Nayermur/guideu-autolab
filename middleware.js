@@ -11,7 +11,7 @@ const SESSION_DAYS = 7;
 const PUBLIC_PATHS = new Set(["/login", "/login.html"]);
 // Post images whose file name carries a 24-character random token are public, because
 // Instagram must download them to publish. The token makes the URLs impossible to guess.
-const PUBLIC_IMAGE = /^\/output\/[A-Za-z0-9-]+-[A-Za-z0-9]{24}\.png$/;
+const PUBLIC_IMAGE = /^\/t\/[a-z0-9-]+\/output\/[A-Za-z0-9-]+-[A-Za-z0-9]{24}\.png$/;
 const enc = new TextEncoder();
 
 const next = () => new Response(null, { headers: { "x-middleware-next": "1" } });

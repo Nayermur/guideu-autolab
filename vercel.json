@@ -5,7 +5,7 @@
   "outputDirectory": "public",
   "headers": [
     {
-      "source": "/data/(.*)",
+      "source": "/t/:tenant/data/:path*",
       "headers": [
         {
           "key": "Cache-Control",

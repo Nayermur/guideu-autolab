@@ -4,9 +4,9 @@
 // POST { action: "run", id }     → starts the bot right away
 // → { ok, bots }
 
-import { send, readDataFile, writeDataFile, startWorkflow, newId } from "./_lib.js";
+import { send, readDataFile, writeDataFile, startWorkflow, newId, tenantPath } from "./_lib.js";
 
-const FILE = "data/bots.json";
+const FILE = tenantPath("data/bots.json");
 
 function cleanBot(b, existing) {
   const name = String(b.name || "").trim().slice(0, 40);

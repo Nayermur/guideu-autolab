@@ -1,4 +1,4 @@
-import { env, team } from "./config.js";
+import { env, team, tenantBaseUrl } from "./config.js";
 import { log, saveState, type Draft, type State } from "./store.js";
 import { notify } from "./telegram.js";
 
@@ -42,7 +42,7 @@ async function graph(method: "GET" | "POST", path: string, params: Record<string
 
 export function publicImageUrl(d: Draft): string {
   if (!d.imagePath?.endsWith(".png")) throw new GraphError("Draft has no PNG image", undefined, false);
-  return new URL(d.imagePath, team.dashboardUrl.replace(/\/?$/, "/")).href;
+  return new URL(d.imagePath, tenantBaseUrl()).href;
 }
 
 export function fullCaption(d: Draft): string {

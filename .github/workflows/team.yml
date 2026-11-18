@@ -3,6 +3,10 @@ name: AutoLab team
 # The code lives in this (public) repository. The team's memory (drafts, logs, post images)
 # and the dashboard site live in a separate private repository, set in the DATA_REPO variable
 # (for example "your-name/autolab-data"). Vercel deploys the dashboard from that private repo.
+#
+# Every customer (tenant) has a folder tenants/<id>/ in the private repo. A run works for one
+# customer (the "tenant" input) or, when it is empty, for every active customer in tenants/index.json,
+# each in its own parallel job so one customer's problem never holds up the others.
 
 # Runs are started by an external scheduler (cron-job.org) through the GitHub API,
 # because GitHub's own schedule did not fire for this account. See README.
@@ -23,19 +27,62 @@ on:
         description: "Bot id (only for mode = bot)"
         default: ""
         type: string
+      tenant:
+        description: "Customer id (empty = every active customer)"
+        default: ""
+        type: string
 
 permissions:
   contents: read
 
-concurrency:
-  group: autolab-team
-  cancel-in-progress: false
-
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      tenants: ${{ steps.list.outputs.tenants }}
+    steps:
+      - name: Read the customer list
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DATA_REPO }}
+          token: ${{ secrets.DATA_REPO_TOKEN }}
+          path: site
+          sparse-checkout: tenants/index.json
+          sparse-checkout-cone-mode: false
+
+      - name: Choose customers for this run
+        id: list
+        env:
+          ONE: ${{ github.event.inputs.tenant }}
+        run: |
+          if [ -n "$ONE" ]; then
+            if ! echo "$ONE" | grep -Eq '^[a-z0-9][a-z0-9-]{1,30}$'; then echo "Bad tenant id"; exit 1; fi
+            list=$(jq -c --arg id "$ONE" '[.tenants[] | select(.id == $id and .status == "active") | .id]' site/tenants/index.json)
+          else
+            list=$(jq -c '[.tenants[] | select(.status == "active") | .id]' site/tenants/index.json)
+          fi
+          echo "Customers: $list"
+          echo "tenants=$list" >> "$GITHUB_OUTPUT"
+
   work:
+    needs: plan
+    if: needs.plan.outputs.tenants != '[]'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        tenant: ${{ fromJSON(needs.plan.outputs.tenants) }}
+    # One run at a time per customer, so two runs never edit the same customer's memory.
+    concurrency:
+      group: autolab-${{ matrix.tenant }}
+      cancel-in-progress: false
     env:
+      TENANT: ${{ matrix.tenant }}
+      # Customers' own keys are stored encrypted in the private repo and unlocked with this key.
+      TENANT_SECRETS_KEY: ${{ secrets.TENANT_SECRETS_KEY }}
+      # The page owner's keys (used only for the owner's own tenant; see src/config.ts).
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GEMINI_MODELS: ${{ vars.GEMINI_MODELS }}
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -57,13 +104,11 @@ jobs:
           token: ${{ secrets.DATA_REPO_TOKEN }}
           path: site
 
-      - name: Link team memory into the workspace
+      - name: Link the customers' memory into the workspace
         run: |
-          mkdir -p site/data site/output
-          rm -rf data output
-          ln -s site/data data
-          ln -s site/output output
-
+          mkdir -p "site/tenants/$TENANT/data" "site/tenants/$TENANT/output"
+          rm -rf tenants
+          ln -s site/tenants tenants
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -107,10 +152,41 @@ jobs:
         if: env.MODE == 'telegram-webhook'
         run: npm run telegram-webhook
 
-      - name: Save team memory and dashboard to the private repo
+      - name: Save this customer's memory to the private repo
         if: always()
         run: |
-          # Keep the dashboard site in the private repo up to date with this code.
+          cd site
+          git config user.name "autolab-bot"
+          git config user.email "autolab-bot@users.noreply.github.com"
+          git add "tenants/$TENANT"
+          if git diff --cached --quiet; then echo "Nothing to save"; exit 0; fi
+          git commit -q -m "Team ${MODE} for ${TENANT}: $(date -u +'%Y-%m-%d %H:%M') UTC"
+          # Other customers' jobs push at the same time; retry on a race.
+          for i in 1 2 3 4 5; do
+            if git pull -q --rebase && git push -q; then exit 0; fi
+            sleep $((i * 5))
+          done
+          exit 1
+
+  site:
+    needs: [plan, work]
+    if: always()
+    runs-on: ubuntu-latest
+    concurrency:
+      group: autolab-site
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check out the private site
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ vars.DATA_REPO }}
+          token: ${{ secrets.DATA_REPO_TOKEN }}
+          path: site
+
+      - name: Keep the dashboard site in the private repo up to date with this code
+        run: |
           rm -rf site/dashboard site/scripts site/api
           cp -r dashboard site/dashboard
           cp -r api site/api
@@ -123,8 +199,11 @@ jobs:
           cd site
           git config user.name "autolab-bot"
           git config user.email "autolab-bot@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then echo "Nothing to save"; exit 0; fi
-          git commit -m "Team ${MODE}: $(date -u +'%Y-%m-%d %H:%M') UTC"
-          git pull --rebase
-          git push
+          git add -A dashboard api scripts middleware.js vercel.json team.json package.json .gitignore
+          if git diff --cached --quiet; then echo "Site is up to date"; exit 0; fi
+          git commit -q -m "Update dashboard site"
+          for i in 1 2 3 4 5; do
+            if git pull -q --rebase && git push -q; then exit 0; fi
+            sleep $((i * 5))
+          done
+          exit 1
