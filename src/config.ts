@@ -131,7 +131,19 @@ if (tenantSettings.niches) {
 /** Public address of this customer's files on the dashboard site, e.g. https://site/t/guideu/ */
 export const tenantBaseUrl = () => `${team.dashboardUrl.replace(/\/$/, "")}/t/${TENANT}/`;
 
-const secrets: TenantSecrets = loadTenantSecrets(TENANT_DIR);
+function readSecrets(): TenantSecrets {
+  try {
+    return loadTenantSecrets(TENANT_DIR);
+  } catch (e: any) {
+    // The page owner's own runs must never stop over this: they still have the GitHub secrets.
+    if (tenantInfo.owner) {
+      console.warn(`Warning: could not read ${TENANT}'s saved keys (${e.message}); using the GitHub secrets.`);
+      return {};
+    }
+    throw new Error(`Could not read the saved keys for ${TENANT}: ${e.message}`);
+  }
+}
+const secrets: TenantSecrets = readSecrets();
 // Only the page owner's tenant may use the keys stored as GitHub secrets; a customer only ever uses their own.
 const fromEnv = (name: string) => (tenantInfo.owner ? process.env[name] || "" : "");
 
