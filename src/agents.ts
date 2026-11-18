@@ -35,14 +35,14 @@ export interface Pick {
   why: string;
 }
 
-export async function scout(niche: Niche, items: FeedItem[], recentHeadlines: string[], count: number): Promise<Pick[]> {
+export async function scout(niche: Niche, items: FeedItem[], recentHeadlines: string[], count: number, insist = false): Promise<Pick[]> {
   const list = items
     .slice(0, 60)
     .map((it, i) => `${i}. [${it.feed}] ${it.title}\n   ${it.summary.replace(/\n/g, " · ").slice(0, 220)}`)
     .join("\n");
   const res = await generateJson<{ picks: Pick[] }>({
     system: persona("scout", niche, `Your job: ${SCOUT_RULES[niche.format]}`),
-    prompt: `Recently covered (do not repeat these topics):\n${recentHeadlines.join("\n") || "(none)"}\n\nCandidates:\n${list}\n\nPick up to ${count}. Return JSON: {"picks":[{"index":<number from the list>,"angle":"<the one-sentence angle for our post>","why":"<why this audience will care>"}]}`,
+    prompt: `Recently covered (do not repeat these topics):\n${recentHeadlines.join("\n") || "(none)"}\n\nCandidates:\n${list}\n\n${insist ? `You MUST pick exactly ${Math.min(count, items.length)}: choose the best available even if none is perfect. Never return an empty list.` : `Pick up to ${count}.`} Return JSON: {"picks":[{"index":<number from the list>,"angle":"<the one-sentence angle for our post>","why":"<why this audience will care>"}]}`,
     temperature: 0.4,
   });
   const raw: any[] = Array.isArray(res) ? res : res.picks ?? [];

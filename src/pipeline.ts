@@ -160,7 +160,9 @@ async function runNiche(state: State, niche: Niche, count = niche.postsPerRun): 
   }
   const recent = state.drafts.filter((d) => (d.niche ?? "news") === niche.id).slice(-20).map((d) => d.source.title);
   setAgent(state, "scout", "working", `Choosing from ${fresh.length} ${niche.name} items`);
-  const picks = await scout(niche, fresh, recent, count);
+  let picks = await scout(niche, fresh, recent, count);
+  // The model sometimes answers with an empty list in a hurry: ask once more, insisting on a pick.
+  if (!picks.length) picks = await scout(niche, fresh, recent, count, true);
   // News headlines are read once. Events and evergreen topics stay available until they are used.
   if (niche.format === "news") fresh.forEach((i) => state.seenLinks.push(i.link));
   log(state, "scout", `${A.scout.name} picked ${picks.length}: ${picks.map((p) => fresh[p.index].title).join(" | ")}`);
