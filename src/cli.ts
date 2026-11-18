@@ -3,7 +3,7 @@ import { saveTenantSecrets } from "./secrets.js";
 import { readFileSync } from "node:fs";
 import { generate } from "./llm.js";
 import { runCycle, decide, syncApprovals, retry, runInbox, runBot } from "./pipeline.js";
-import { instagramEnabled, publishApproved } from "./instagram.js";
+import { instagramEnabled, publishApproved, refreshInstagramToken } from "./instagram.js";
 import { loadState } from "./store.js";
 import { processTelegramUpdates, testTelegram, telegramDebug, setTelegramWebhook } from "./telegram.js";
 import { privateConfig } from "./workspace.js";
@@ -88,6 +88,7 @@ async function main() {
       break;
     }
     case "sync": {
+      await refreshInstagramToken();
       await syncApprovals();
       // Pakhi's requests are picked up here too, in case the immediate run was skipped.
       await runInbox();

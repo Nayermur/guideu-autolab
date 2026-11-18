@@ -1,5 +1,6 @@
-import { env, team, tenantBaseUrl } from "./config.js";
-import { log, saveState, type Draft, type State } from "./store.js";
+import { env, team, tenantBaseUrl, secrets, TENANT_DIR } from "./config.js";
+import { saveTenantSecrets } from "./secrets.js";
+import { log, saveState, loadState, type Draft, type State } from "./store.js";
 import { notify } from "./telegram.js";
 
 /**
@@ -101,4 +102,36 @@ export async function publishApproved(state: State): Promise<number> {
     saveState(state);
   }
   return count;
+}
+
+const REFRESH_EVERY_DAYS = 7;
+
+/**
+ * Instagram Login tokens (IGAA...) stop working after 60 days unless they are renewed.
+ * Once a week the saved token is swapped for a fresh 60-day one and saved (encrypted) again.
+ * Facebook Login system-user tokens (EAA...) never expire and are left alone.
+ */
+export async function refreshInstagramToken(): Promise<void> {
+  const token = secrets.igToken;
+  if (!token?.startsWith("IG")) return;
+  const state = loadState();
+  const last = state.igTokenRefreshedAt ? Date.parse(state.igTokenRefreshedAt) : 0;
+  if (Date.now() - last < REFRESH_EVERY_DAYS * 86400_000) return;
+  try {
+    const url = `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(token)}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+    const json: any = await res.json().catch(() => ({}));
+    if (!res.ok || !json.access_token) throw new Error(json?.error?.message ?? `HTTP ${res.status}`);
+    secrets.igToken = json.access_token;
+    env.igToken = json.access_token;
+    saveTenantSecrets(TENANT_DIR, secrets);
+    state.igTokenRefreshedAt = new Date().toISOString();
+    log(state, "system", `Instagram token renewed (valid for ${Math.round((json.expires_in ?? 0) / 86400)} more days)`);
+  } catch (e: any) {
+    // A brand-new token cannot be renewed in its first 24 hours; try again next time.
+    log(state, "system", `Could not renew the Instagram token yet: ${e.message}`);
+    // Try again in about a day instead of on every sync.
+    state.igTokenRefreshedAt = new Date(Date.now() - (REFRESH_EVERY_DAYS - 1) * 86400_000).toISOString();
+  }
+  saveState(state);
 }

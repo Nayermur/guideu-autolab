@@ -60,6 +60,8 @@ export interface State {
   nicheCursor?: number;
   /** Background image requests per source today, to spread the load (see images.ts). */
   imageUsage?: { date: string; counts: Record<"wikimedia" | "openverse" | "ai", number>; unavailable: string[] };
+  /** When the Instagram Login (IGAA) token was last renewed; those tokens last 60 days. */
+  igTokenRefreshedAt?: string;
   /** Evergreen topics already turned into posts (e.g. "wiki:Panam Nagar"). */
   usedTopics?: string[];
 }

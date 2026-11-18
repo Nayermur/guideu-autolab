@@ -99,6 +99,8 @@ export interface TenantSecrets {
   igToken?: string;
   /** graph.facebook.com (EAA tokens) or graph.instagram.com (IGAA tokens) */
   igGraphHost?: string;
+  /** Telegram sends this with every button press to the customer's webhook (set by the Setup page). */
+  telegramWebhookSecret?: string;
 }
 
 export const TENANTS_DIR = resolve(ROOT, "tenants");
@@ -143,7 +145,8 @@ function readSecrets(): TenantSecrets {
     throw new Error(`Could not read the saved keys for ${TENANT}: ${e.message}`);
   }
 }
-const secrets: TenantSecrets = readSecrets();
+/** This customer's saved keys (empty for keys they have not saved). */
+export const secrets: TenantSecrets = readSecrets();
 // Only the page owner's tenant may use the keys stored as GitHub secrets; a customer only ever uses their own.
 const fromEnv = (name: string) => (tenantInfo.owner ? process.env[name] || "" : "");
 

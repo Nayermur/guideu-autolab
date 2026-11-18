@@ -105,7 +105,8 @@ $("#save").onclick = () => busy($("#save"), async () => {
     const wasActive = view.status === "active";
     view = await call({ action: "save", brand: { name: $("#brandName").value, handle: $("#brandHandle").value }, niches, keys: typedKeys() });
     render();
-    show(out, !wasActive && view.status === "active" ? "সেভ হয়েছে। আপনার টিম এখন থেকে কাজ শুরু করবে 🎉" : "সেভ হয়েছে ✓", true);
+    if (view.warning) show(out, `সেভ হয়েছে, তবে: ${view.warning}`, false);
+    else show(out, !wasActive && view.status === "active" ? "সেভ হয়েছে। আপনার টিম এখন থেকে কাজ শুরু করবে 🎉" : "সেভ হয়েছে ✓", true);
   } catch (e) { show(out, e.message, false); }
 });
 
