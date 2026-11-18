@@ -306,8 +306,9 @@ function px(ctx, x, y, w, h, c) {
  * going left), the front view while standing, and the back view (upper body, behind the desk) while seated.
  */
 function drawSprite(ctx, x, y, sp, { back, seated, typing, moving, left, t }) {
+  const big = sp.frames.front[3] / sp.scale / 21; // 1 = normal size, 2 = twice as big
   ctx.fillStyle = "rgba(0,0,0,0.22)";
-  ctx.fillRect(Math.round(x) - 5, Math.round(y) - 1, 11, 2);
+  ctx.fillRect(Math.round(x - 5 * big), Math.round(y) - 1, Math.round(11 * big), Math.round(2 * big));
   const key = moving && !seated ? `walk${Math.floor(t / 110) % 6}` : back ? "back" : "front";
   const [sx, sy, sw, sh] = sp.frames[key];
   const w = sw / sp.scale, h = sh / sp.scale;
@@ -316,7 +317,7 @@ function drawSprite(ctx, x, y, sp, { back, seated, typing, moving, left, t }) {
     // Sitting: only the upper body shows above the chair; a small bob while typing.
     const keep = Math.round(sh * 0.62);
     const bob = typing && Math.floor(t / 150) % 2 ? 1 / S : 0;
-    ctx.drawImage(sp.img, sx, sy, sw, keep, x - w / 2, y - 5 - keep / sp.scale - bob, w, keep / sp.scale);
+    ctx.drawImage(sp.img, sx, sy, sw, keep, x - w / 2, y - 5 * big - keep / sp.scale - bob, w, keep / sp.scale);
   } else if (left && moving) {
     ctx.translate(Math.round(x * S) / S, 0);
     ctx.scale(-1, 1);
@@ -492,7 +493,10 @@ export class Office {
             left: p.left,
             t,
           });
-          tags.push({ key: p.key, x: x / W, y: (y - (p.seated ? 29 : 26)) / H });
+          // Name tag just above the head (sprite characters can be taller than the drawn ones).
+          const sp = CUR_LOOKS[p.key]?.sprite && SPRITES[CUR_LOOKS[p.key].sprite];
+          const head = sp ? sp.frames.front[3] / sp.scale * (p.seated ? 0.62 : 1) + (p.seated ? 5 * (sp.frames.front[3] / sp.scale / 21) : 0) + 5 : p.seated ? 29 : 26;
+          tags.push({ key: p.key, x: x / W, y: (y - head) / H });
         },
       });
     }
