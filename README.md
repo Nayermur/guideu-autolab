@@ -19,7 +19,7 @@ RSS ফিড → Rafi → Nila → Sabbir ⇄ Arif → Mitu → 📱 আপন�
 ## খরচ: $০
 
 - **AI:** Google Gemini free tier। একটা মডেল ব্যস্ত থাকলে স্বয়ংক্রিয়ভাবে পরের মডেল চেষ্টা করে।
-- **24/7 চালানো:** GitHub Actions, দিনে ৩ শিফট (সকাল ৯টা, দুপুর ২টা, রাত ৮টা, বাংলাদেশ সময়)। public রিপোতে Actions-এর মিনিট সীমাহীন ফ্রি।
+- **24/7 চালানো:** GitHub Actions + cron-job.org (ফ্রি টাইমার), দিনে ৩ শিফট (সকাল ৯টা, দুপুর ২টা, রাত ৮টা, বাংলাদেশ সময়)। public রিপোতে Actions-এর মিনিট সীমাহীন ফ্রি।
 - **মেমোরি:** ড্রাফট, লগ আর পোস্টের ছবি থাকে আলাদা একটা **private** রিপোতে, তাই কোড public হলেও ডেটা গোপন থাকে
 - **Approval:** Telegram bot
 
@@ -56,9 +56,15 @@ RSS ফিড → Rafi → Nila → Sabbir ⇄ Arif → Mitu → 📱 আপন�
    - `GEMINI_API_KEY`: aistudio.google.com/apikey থেকে নেওয়া key
    - `TELEGRAM_BOT_TOKEN`: Telegram-এ @BotFather-কে `/newbot` পাঠালে পাবেন
    - `TELEGRAM_CHAT_ID`: @userinfobot-কে মেসেজ করলে আপনার id দেখাবে। তারপর নিজের বানানো বটকে একবার `/start` পাঠান।
-5. **Actions চালু করুন:** Actions ট্যাব → "AutoLab team" → **Run workflow**। প্রথমে mode `check-feeds` দিয়ে চালিয়ে দেখুন সব নিউজ সোর্স কাজ করছে কিনা, তারপর `shift` দিয়ে প্রথম শিফট চালান।
-6. এরপর থেকে নতুন ড্রাফট Telegram-এ ছবিসহ আসবে। ✅ বা ❌ চাপলেই হবে।
-7. Instagram secrets যোগ করলে Approve করা পোস্ট নিজে থেকেই Instagram-এ যাবে (নিচে "Instagram অটো-পাবলিশ" দেখুন)। না করলে ছবি ডেটা রিপোর `output/` ফোল্ডারে আর ক্যাপশন ড্যাশবোর্ডে থাকবে, নিজে আপলোড করবেন।
+5. **নির্দিষ্ট সময়ে চালানো (cron-job.org):** GitHub-এর নিজের schedule এই অ্যাকাউন্টে চলেনি, তাই ফ্রি cron-job.org দিয়ে চালানো হয়।
+   - একটা Fine-grained token বানান: শুধু এই রিপো, **Actions: Read and write**
+   - cron-job.org-এ দুটো job বানান। দুটোতেই URL `https://api.github.com/repos/<you>/<repo>/actions/workflows/team.yml/dispatches`, method **POST**, আর এই headers দিন: `Authorization: Bearer <token>`, `Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`, `Content-Type: application/json`, `User-Agent: autolab-cron`
+   - **সিঙ্ক** (প্রতি ৩০ মিনিট), body: `{"ref":"main","inputs":{"mode":"telegram","niche":"auto"}}`
+   - **শিফট** (দিনে ৩ বার, যেমন ৯:০৭, ১৪:০৭, ২০:০৭), body: `{"ref":"main","inputs":{"mode":"shift","niche":"auto"}}`
+   - Test run-এ **204** এলে সব ঠিক আছে
+6. **Actions চালু করুন:** Actions ট্যাব → "AutoLab team" → **Run workflow**। প্রথমে mode `check-feeds` দিয়ে চালিয়ে দেখুন সব নিউজ সোর্স কাজ করছে কিনা, তারপর `shift` দিয়ে প্রথম শিফট চালান।
+7. এরপর থেকে নতুন ড্রাফট Telegram-এ ছবিসহ আসবে। ✅ বা ❌ চাপলেই হবে।
+8. Instagram secrets যোগ করলে Approve করা পোস্ট নিজে থেকেই Instagram-এ যাবে (নিচে "Instagram অটো-পাবলিশ" দেখুন)। না করলে ছবি ডেটা রিপোর `output/` ফোল্ডারে আর ক্যাপশন ড্যাশবোর্ডে থাকবে, নিজে আপলোড করবেন।
 
 ## ভার্চুয়াল অফিস ড্যাশবোর্ড
 

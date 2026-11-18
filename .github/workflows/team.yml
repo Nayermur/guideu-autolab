@@ -4,13 +4,9 @@ name: AutoLab team
 # and the dashboard site live in a separate private repository, set in the DATA_REPO variable
 # (for example "your-name/autolab-data"). Vercel deploys the dashboard from that private repo.
 
+# Runs are started by an external scheduler (cron-job.org) through the GitHub API,
+# because GitHub's own schedule did not fire for this account. See README.
 on:
-  schedule:
-    # GitHub drops scheduled runs at busy times like :00 and :30, so these use quiet minutes.
-    # Full team shifts at 09:07, 14:07 and 20:07 Bangladesh time (UTC+6)
-    - cron: "7 3,8,14 * * *"
-    # Every 30 minutes: apply Telegram approvals and publish approved posts to Instagram
-    - cron: "13,43 * * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -45,7 +41,7 @@ jobs:
       IG_GRAPH_HOST: ${{ vars.IG_GRAPH_HOST }}
       IG_GRAPH_VERSION: ${{ vars.IG_GRAPH_VERSION }}
       NICHE: ${{ github.event.inputs.niche != 'auto' && github.event.inputs.niche || '' }}
-      MODE: ${{ github.event.inputs.mode || (github.event.schedule == '13,43 * * * *' && 'telegram' || 'shift') }}
+      MODE: ${{ github.event.inputs.mode || 'shift' }}
     steps:
       - uses: actions/checkout@v5
 
