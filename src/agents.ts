@@ -94,15 +94,38 @@ export async function write(niche: Niche, item: FeedItem, angle: string, facts: 
   const sublineRule = niche.format === "event"
     ? "one line on what to expect, max 14 words (date and venue are shown separately on the poster)"
     : "one supporting line for the image, max 16 words";
-  return generateJson<Copy>({
+  const ask = (extra = "") => generateJson<unknown>({
     system: persona(
       "writer",
       niche,
       `Your job: write an Instagram post in ${team.language}. Use ONLY the verified facts given to you; never invent numbers, names, dates, prices or quotes. Keep English names of events, games, films, products and companies as they are. Never mention "verified facts", the team, AI or how the post was made: write as the page speaking to its followers. A short credit naming the publication (for example "সূত্র: Wikipedia") is fine and expected where the caption rules ask for it. The headline, subline and caption MUST be in ${team.language} even when the facts are in English.`,
     ),
-    prompt: `Item: ${item.title}\nAngle: ${angle}\nVerified facts:\n- ${facts.join("\n- ")}\n${niche.id === "office" ? "This is the page's own post, written from the owner's notes: do not mention any source, website or assistant." : `Source: ${item.feed}`}${revision}\n\nReturn JSON:\n{"headline":"<${headlineRule}>","subline":"<${sublineRule}>","caption":"<Instagram caption: ${CAPTION_RULES[niche.format]} Max 1200 characters. No hashtags here.>","hashtags":["#tag", "... 3 to 6 relevant tags; no years, numbers or names unless they appear in the verified facts"]}`,
+    prompt: `Item: ${item.title}\nAngle: ${angle}\nVerified facts:\n- ${facts.join("\n- ")}\n${niche.id === "office" ? "This is the page's own post, written from the owner's notes: do not mention any source, website or assistant." : `Source: ${item.feed}`}${revision}\n\nReturn JSON:\n{"headline":"<${headlineRule}>","subline":"<${sublineRule}>","caption":"<Instagram caption: ${CAPTION_RULES[niche.format]} Max 1200 characters. No hashtags here.>","hashtags":["#tag", "... 3 to 6 relevant tags; no years, numbers or names unless they appear in the verified facts"]}${extra}`,
     temperature: 0.8,
   });
+  // The model sometimes wraps the post in a list or another object, or leaves a field out: check before anyone uses it.
+  let copy = toCopy(await ask());
+  if (!copy) copy = toCopy(await ask(`\n\nIMPORTANT: return ONE JSON object with exactly these keys: "headline", "subline", "caption", "hashtags". All three texts must be non-empty strings.`));
+  if (!copy) throw new Error("Writer returned an incomplete post (no headline, subline or caption)");
+  return copy;
+}
+
+/** Turns the Writer's raw answer into a complete Copy, or null if something essential is missing. */
+function toCopy(raw: unknown): Copy | null {
+  let v: any = raw;
+  if (Array.isArray(v)) v = v[0];
+  if (v && typeof v === "object" && typeof v.headline !== "string") {
+    const inner = Object.values(v).find((x: any) => x && typeof x === "object" && typeof x.headline === "string");
+    if (inner) v = inner;
+  }
+  const text = (x: unknown) => (typeof x === "string" ? x.trim() : "");
+  const copy = {
+    headline: text(v?.headline),
+    subline: text(v?.subline),
+    caption: text(v?.caption),
+    hashtags: (Array.isArray(v?.hashtags) ? v.hashtags : []).map(String).filter((t: string) => /^#\S+$/.test(t)),
+  };
+  return copy.headline && copy.subline && copy.caption ? copy : null;
 }
 
 // ---------- Critic ----------

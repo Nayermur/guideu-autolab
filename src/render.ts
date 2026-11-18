@@ -34,6 +34,7 @@ export function eventDate(ev: EventInfo) {
 
 /** Builds the Instagram post (square by default) as HTML. Edit this to change your visual style. */
 export function postHtml(o: { headline: string; subline: string; source: string; brief: DesignBrief; event?: EventInfo; photo?: string; credit?: string }): string {
+  o = { ...o, headline: String(o.headline ?? ""), subline: String(o.subline ?? ""), source: String(o.source ?? "") };
   if (o.photo && (o.brief.layout === "photo-bg" || o.brief.layout === "photo-card")) return photoPosterHtml({ ...o, photo: o.photo });
   if (o.event && o.brief.layout === "event") return eventPosterHtml({ ...o, event: o.event });
   const b = team.brand;
