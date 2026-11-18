@@ -1,5 +1,5 @@
 import { team, env, enabledNiches, findNiche, type Niche } from "./config.js";
-import { scout, verify, write, critique, designBrief, type Copy } from "./agents.js";
+import { scout, verify, write, critique, designBrief, mixedScriptWords, type Copy } from "./agents.js";
 import { fetchNicheItems, fetchArticleText, fetchMetaDescription } from "./sources.js";
 import { postHtml, renderPost } from "./render.js";
 import { loadState, saveState, log, setAgent, newId, type Draft, type State } from "./store.js";
@@ -83,6 +83,12 @@ export async function runCycle(): Promise<Draft[]> {
         while (true) {
           setAgent(state, "critic", "working", `Reviewing: ${copy.headline}`);
           review = await critique(niche, item, v.facts, copy);
+          const broken = mixedScriptWords(copy);
+          if (broken.length) {
+            review.approve = false;
+            review.score = Math.min(review.score, team.minCriticScore - 1);
+            review.feedback = `Spelling: these words mix Bangla and English letters and must be fixed: ${broken.join(", ")}. ${review.feedback}`;
+          }
           log(state, "critic", `${A.critic.name} scored ${review.score}/10${review.feedback ? `: ${review.feedback}` : ""}`);
           setAgent(state, "critic", "idle", `Scored ${review.score}/10`);
           if ((review.approve && review.score >= team.minCriticScore) || revisions >= team.maxRevisions) break;

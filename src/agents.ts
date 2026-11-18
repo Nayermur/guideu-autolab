@@ -151,3 +151,11 @@ export async function designBrief(niche: Niche, copy: Copy, angle: string): Prom
   else if (!["bold", "split", "minimal"].includes(res.layout)) res.layout = "bold";
   return res;
 }
+
+// ---------- Automatic checks (no AI) ----------
+/** Words that mix Bangla and Latin letters, e.g. "কমics": a typo the AI critic sometimes misses. */
+export function mixedScriptWords(copy: Copy): string[] {
+  const text = [copy.headline, copy.subline, copy.caption].join(" ");
+  const words = text.match(/[\p{L}\p{M}]+/gu) ?? [];
+  return [...new Set(words.filter((w) => /[\u0980-\u09FF]/.test(w) && /[A-Za-z]/.test(w)))];
+}
