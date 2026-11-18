@@ -1,6 +1,7 @@
 import { team, env, enabledNiches, findNiche, type Niche } from "./config.js";
 import { scout, verify, write, critique, designBrief, mixedScriptWords, banglaShare, type Copy, type Review } from "./agents.js";
 import { fetchNicheItems, fetchArticleText, fetchMetaDescription, type FeedItem } from "./sources.js";
+import { findImage } from "./images.js";
 import { listInbox, saveInbox, readInboxImage, officeNiche, loadBots, findBot, botNiche, takeDecisions, removeDecision } from "./workspace.js";
 import { postHtml, renderPost } from "./render.js";
 import { loadState, saveState, log, setAgent, newId, type Draft, type State } from "./store.js";
@@ -96,9 +97,21 @@ async function produce(state: State, niche: Niche, item: FeedItem, angle: string
   const images = opts.images ?? [];
   const brief = await designBrief(niche, copy, angle, images);
   const chosen = images[brief.imageIndex ?? 0];
-  const photo = chosen && brief.layout.startsWith("photo") ? `data:${chosen.mimeType};base64,${chosen.data}` : undefined;
+  let photo = chosen && brief.layout.startsWith("photo") ? `data:${chosen.mimeType};base64,${chosen.data}` : undefined;
+  let imageCredit: string | undefined;
+  if (!images.length && team.backgroundImages !== false && brief.imageQuery) {
+    setAgent(state, "designer", "working", `Finding a photo: ${brief.imageQuery}`);
+    const { image, tried } = await findImage(state, { query: brief.imageQuery, kind: brief.imageKind === "real" ? "real" : "symbolic", aiPrompt: brief.aiPrompt, prefer: niche.imageSources });
+    log(state, "designer", `${A.designer.name} photo search "${brief.imageQuery}": ${tried.join(" → ")}`);
+    if (image) {
+      photo = `data:${image.mimeType};base64,${image.data}`;
+      imageCredit = image.credit;
+      // A real photo of the subject is shown as the main picture; mood photos go behind the text.
+      brief.layout = image.kind === "real" ? "photo-card" : "photo-bg";
+    }
+  }
   const id = newId();
-  const imagePath = await renderPost(id, postHtml({ headline: copy.headline, subline: copy.subline, source: item.feed, brief, event: item.event, photo }));
+  const imagePath = await renderPost(id, postHtml({ headline: copy.headline, subline: copy.subline, source: item.feed, brief, event: item.event, photo, credit: imageCredit }));
   setAgent(state, "designer", "idle", `Designed ${id}`);
   log(state, "designer", `${A.designer.name} designed ${id} (${brief.layout}${images.length ? `, photo: ${brief.imageUse}` : ""})`);
 
@@ -115,9 +128,10 @@ async function produce(state: State, niche: Niche, item: FeedItem, angle: string
     facts,
     headline: copy.headline,
     subline: copy.subline,
-    caption: copy.caption,
+    caption: imageCredit ? `${copy.caption}\n\n📷 ${imageCredit}` : copy.caption,
     hashtags,
     kicker: brief.kicker,
+    imageCredit,
     imagePath: imagePath.replace(/^.*\/output\//, "output/"),
     critic: { score: review.score, notes: review.feedback, revisions },
   };

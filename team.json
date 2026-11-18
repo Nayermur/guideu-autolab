@@ -120,6 +120,11 @@
             "brunch"
           ]
         }
+      ],
+      "imageSources": [
+        "wikimedia",
+        "openverse",
+        "ai"
       ]
     },
     {
@@ -164,6 +169,10 @@
           "url": "https://www.eurogamer.net/feed",
           "filter": "GTA|Grand Theft Auto|Rockstar"
         }
+      ],
+      "imageSources": [
+        "ai",
+        "openverse"
       ]
     },
     {
@@ -219,6 +228,10 @@
           "url": "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
           "filter": "film|movie|cinema|box office|trailer|Oscar"
         }
+      ],
+      "imageSources": [
+        "openverse",
+        "ai"
       ]
     },
     {
@@ -282,6 +295,11 @@
             "Bara Katra"
           ]
         }
+      ],
+      "imageSources": [
+        "wikimedia",
+        "openverse",
+        "ai"
       ]
     },
     {
@@ -353,5 +371,6 @@
     }
   },
   "dashboardUrl": "https://guideu-autolab.vercel.app",
-  "autoPublish": true
+  "autoPublish": true,
+  "backgroundImages": true
 }

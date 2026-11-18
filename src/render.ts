@@ -26,7 +26,7 @@ export function eventDate(ev: EventInfo) {
 }
 
 /** Builds the 1080x1350 Instagram portrait post as HTML. Edit this to change your visual style. */
-export function postHtml(o: { headline: string; subline: string; source: string; brief: DesignBrief; event?: EventInfo; photo?: string }): string {
+export function postHtml(o: { headline: string; subline: string; source: string; brief: DesignBrief; event?: EventInfo; photo?: string; credit?: string }): string {
   if (o.photo && (o.brief.layout === "photo-bg" || o.brief.layout === "photo-card")) return photoPosterHtml({ ...o, photo: o.photo });
   if (o.event && o.brief.layout === "event") return eventPosterHtml({ ...o, event: o.event });
   const b = team.brand;
@@ -119,7 +119,7 @@ function eventPosterHtml(o: { headline: string; subline: string; source: string;
 }
 
 /** Posts built around the owner's photo: full background with overlay, or a photo card with text below. */
-function photoPosterHtml(o: { headline: string; subline: string; source: string; brief: DesignBrief; event?: EventInfo; photo: string }): string {
+function photoPosterHtml(o: { headline: string; subline: string; source: string; brief: DesignBrief; event?: EventInfo; photo: string; credit?: string }): string {
   const b = team.brand;
   const bg = o.brief.layout === "photo-bg";
   const date = o.event ? eventDate(o.event) : null;
@@ -149,8 +149,9 @@ function photoPosterHtml(o: { headline: string; subline: string; source: string;
   .date { background: ${b.text}; color: ${b.background}; font-weight: 700; font-size: 34px; padding: 10px 24px; border-radius: 12px; }
   h1 { font-weight: 700; font-size: ${headlineSize}px; line-height: 1.15; margin-top: ${bg ? 26 : 22}px; text-shadow: 0 2px 18px #0009; }
   .sub { font-weight: 500; font-size: ${bg ? 40 : 34}px; line-height: 1.45; opacity: .9; margin-top: ${bg ? 22 : 16}px; }
+  .credit { font-family: "Hind Siliguri", sans-serif; font-size: 20px; letter-spacing: 0; opacity: .8; max-width: 640px; line-height: 1.3; }
   .where { margin-top: ${bg ? 22 : 16}px; font-size: ${bg ? 36 : 32}px; font-weight: 700; }
-  .foot { margin-top: ${bg ? "44px" : "auto"}; padding-top: 26px; border-top: 2px solid ${b.text}33; display: flex; justify-content: flex-end;
+  .foot { margin-top: ${bg ? "44px" : "auto"}; padding-top: 26px; border-top: 2px solid ${b.text}33; display: flex; justify-content: space-between; gap: 24px; align-items: center;
     font-family: "Space Grotesk", sans-serif; font-size: 28px; opacity: .8; letter-spacing: 1px; }
 </style></head><body>
   <div class="photo"></div><div class="shade"></div>
@@ -160,7 +161,7 @@ function photoPosterHtml(o: { headline: string; subline: string; source: string;
     <h1>${esc(o.headline)}</h1>
     <div class="sub">${esc(o.subline)}</div>
     ${where ? `<div class="where">📍 ${esc(where)}</div>` : ""}
-    <div class="foot"><span>${esc(b.handle)}</span></div>
+    <div class="foot"><span class="credit">${o.credit ? esc(o.credit) : ""}</span><span>${esc(b.handle)}</span></div>
   </div>
 </body></html>`;
 }

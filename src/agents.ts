@@ -141,6 +141,12 @@ export interface DesignBrief {
   imageIndex?: number;
   /** How the photo is used: background, poster (main picture), reference (not shown) or none. */
   imageUse?: "background" | "poster" | "reference" | "none";
+  /** When there is no owner photo: English search words for a background photo. */
+  imageQuery?: string;
+  /** "real" = a photo of the actual subject exists (place, dish, building); "symbolic" = use a mood photo. */
+  imageKind?: "real" | "symbolic";
+  /** A one-sentence scene description for an AI illustration (no text, logos or real people). */
+  aiPrompt?: string;
 }
 
 export async function designBrief(
@@ -152,14 +158,14 @@ export async function designBrief(
   const withImages = images.length > 0;
   const imageRule = withImages
     ? ` The owner attached ${images.length} photo(s), shown in order (index 0 first). Decide how to use them: "poster" (the photo is the main picture, text below it; best for clear photos of a product, place, person or event flyer), "background" (photo behind the text with a dark overlay; best for atmospheric photos), or "reference" (do not show it, e.g. blurry, a screenshot of text, or not suitable). Pick the best photo index.`
-    : "";
+    : ` Also plan a background photo: "imageQuery" (2-5 English search words, e.g. "Lalbagh Fort Dhaka", "acoustic concert stage", "bakarkhani bread"), "imageKind" ("real" if a photo of the exact subject likely exists, like a famous place, dish or building; otherwise "symbolic") and "aiPrompt" (one English sentence describing a fitting scene, without text, logos, real people or copyrighted characters).`;
   const res = await generateJson<DesignBrief>({
     system: persona(
       "designer",
       niche,
       `Your job: choose how the post image should look. Pick a short kicker label (1-2 words in the post language, for example: ${niche.kickers.join(", ")}), one emoji that fits, and a layout: bold (big headline, high energy), split (headline plus clear supporting line) or minimal (calm, serious topics).${imageRule}`,
     ),
-    prompt: `Headline: ${copy.headline}\nSubline: ${copy.subline}\nAngle: ${angle}\n\nReturn JSON: {"kicker":"...","emoji":"...","layout":"bold"|"split"|"minimal"${withImages ? ',"imageUse":"poster"|"background"|"reference","imageIndex":<number>' : ""}}`,
+    prompt: `Headline: ${copy.headline}\nSubline: ${copy.subline}\nAngle: ${angle}\n\nReturn JSON: {"kicker":"...","emoji":"...","layout":"bold"|"split"|"minimal"${withImages ? ',"imageUse":"poster"|"background"|"reference","imageIndex":<number>' : ',"imageQuery":"...","imageKind":"real"|"symbolic","aiPrompt":"..."'}}`,
     temperature: 0.6,
     images,
   });

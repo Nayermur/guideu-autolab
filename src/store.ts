@@ -27,6 +27,8 @@ export interface Draft {
   hashtags: string[];
   kicker: string;
   imagePath?: string;
+  /** Credit for the background photo, if one was used. */
+  imageCredit?: string;
   critic: { score: number; notes: string; revisions: number };
   decidedAt?: string;
   telegramMessageId?: number;
@@ -56,6 +58,8 @@ export interface State {
   lastRunAt?: string;
   /** Position in the niche rotation. */
   nicheCursor?: number;
+  /** Background image requests per source today, to spread the load (see images.ts). */
+  imageUsage?: { date: string; counts: Record<"wikimedia" | "openverse" | "ai", number>; unavailable: string[] };
   /** Evergreen topics already turned into posts (e.g. "wiki:Panam Nagar"). */
   usedTopics?: string[];
 }

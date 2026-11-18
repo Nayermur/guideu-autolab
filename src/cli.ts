@@ -52,6 +52,15 @@ async function main() {
       console.log("Telegram approvals synced.");
       break;
     }
+    case "test-images": {
+      const { findImage } = await import("./images.js");
+      const s = loadState();
+      for (const [query, kind] of [["Lalbagh Fort Dhaka", "real"], ["bakarkhani bread", "real"], ["acoustic concert stage", "symbolic"], ["cinema hall audience", "symbolic"]] as const) {
+        const { image, tried } = await findImage(s, { query, kind, aiPrompt: query });
+        console.log(`${image ? "OK  " : "FAIL"} "${query}" (${kind}): ${tried.join(" → ")}${image ? ` · ${image.credit} · ${Math.round(image.data.length * 0.75 / 1024)} KB` : ""}`);
+      }
+      break;
+    }
     case "telegram-webhook": {
       const secret = privateConfig().telegramWebhookSecret;
       if (!secret) throw new Error("data/config/telegram.json has no telegramWebhookSecret");

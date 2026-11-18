@@ -16,6 +16,7 @@
     "bot": "tsx src/cli.ts bot",
     "test-telegram": "tsx src/cli.ts test-telegram",
     "telegram-webhook": "tsx src/cli.ts telegram-webhook",
+    "test-images": "tsx src/cli.ts test-images",
     "publish": "tsx src/cli.ts publish",
     "retry": "tsx src/cli.ts retry",
     "check-feeds": "tsx src/cli.ts check-feeds",

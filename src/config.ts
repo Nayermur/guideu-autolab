@@ -43,6 +43,8 @@ export interface Niche {
   /** Example labels for the image's kicker badge. */
   kickers: string[];
   sources: SourceConfig[];
+  /** Optional order of background image sources, e.g. ["ai", "openverse"]. */
+  imageSources?: ("wikimedia" | "openverse" | "ai")[];
 }
 
 export interface TeamConfig {
@@ -59,6 +61,8 @@ export interface TeamConfig {
   dashboardUrl: string;
   /** Publish to Instagram automatically once a draft is approved. */
   autoPublish: boolean;
+  /** Find background photos for posts (Wikimedia, Openverse, AI). Default true. */
+  backgroundImages?: boolean;
 }
 
 export const team: TeamConfig = JSON.parse(readFileSync(resolve(ROOT, "team.json"), "utf8"));
