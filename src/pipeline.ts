@@ -253,7 +253,11 @@ async function applyDecisions(state: State) {
   for (const dec of takeDecisions()) {
     const draft = state.drafts.find((d) => d.id === dec.draftId);
     const fromOwner = dec.via === "dashboard" || !dec.chatId || dec.chatId === String(env.telegramChatId);
-    if (draft && fromOwner && draft.status === "pending") {
+    if (draft && fromOwner && draft.status === "failed" && dec.decision === "approved") {
+      draft.status = "approved";
+      draft.publish = { attempts: 0 };
+      log(state, "system", `Owner asked to publish ${draft.id} again via ${dec.via}`);
+    } else if (draft && fromOwner && draft.status === "pending") {
       draft.status = dec.decision;
       draft.decidedAt = dec.at;
       log(state, "system", `Owner ${dec.decision} draft ${draft.id} via ${dec.via}`);

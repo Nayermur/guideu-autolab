@@ -240,7 +240,7 @@ function openDraft(id) {
       ${d.status === "pending" ? decisionButtons(d) : ""}
       ${d.status === "approved" ? `<p class="hint">অনুমোদিত। পরের সিঙ্কে (৩০ মিনিটের মধ্যে) Instagram-এ যাবে।${d.publish?.lastError ? ` শেষ চেষ্টায় সমস্যা: ${esc(d.publish.lastError)}` : ""}</p>` : ""}
       ${d.instagram ? `<p class="hint">📢 Instagram-এ পোস্ট হয়েছে ${ago(d.instagram.publishedAt)}${d.instagram.permalink ? `: <a href="${esc(d.instagram.permalink)}" target="_blank" rel="noopener">পোস্ট দেখুন</a>` : ""}</p>` : ""}
-      ${d.status === "failed" ? `<p class="hint" style="color:var(--err)">Instagram-এ পোস্ট করা যায়নি: ${esc(d.publish?.lastError ?? "")}</p>` : ""}
+      ${d.status === "failed" ? `<p class="hint" style="color:var(--err)">Instagram-এ পোস্ট করা যায়নি: ${esc(d.publish?.lastError ?? "")}</p><div class="decide"><button class="send small" data-decide="approved" data-draft="${esc(d.id)}">🔁 আবার চেষ্টা করুন</button></div>` : ""}
       <div class="caption">${esc(full)}</div>
       <button class="copy" id="copyBtn">ক্যাপশন কপি করুন</button>
       ${own ? `<p class="hint">পাখির মাধ্যমে আপনার পাঠানো পোস্ট।</p>` : `<p class="hint">সূত্র: <a href="${esc(d.source?.link)}" target="_blank" rel="noopener">${esc(d.source?.title)}</a> (${esc(d.source?.feed)})</p>`}
