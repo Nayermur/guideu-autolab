@@ -6,6 +6,8 @@ export interface GenerateOptions {
   json?: boolean;
   temperature?: number;
   timeoutMs?: number;
+  /** Optional images the model should look at (base64, without the data: prefix). */
+  images?: { mimeType: string; data: string }[];
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -26,7 +28,15 @@ async function geminiOnce(model: string, o: GenerateOptions): Promise<string> {
       headers: { "Content-Type": "application/json", "X-goog-api-key": env.geminiKey },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: o.system }] },
-        contents: [{ role: "user", parts: [{ text: o.prompt }] }],
+        contents: [
+          {
+            role: "user",
+            parts: [
+              ...(o.images ?? []).map((img) => ({ inline_data: { mime_type: img.mimeType, data: img.data } })),
+              { text: o.prompt },
+            ],
+          },
+        ],
         generationConfig: {
           temperature: o.temperature ?? 0.7,
           ...(o.json ? { responseMimeType: "application/json" } : {}),

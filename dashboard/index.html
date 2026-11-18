@@ -22,7 +22,14 @@
     <section class="stage-card" aria-label="ভার্চুয়াল অফিস">
       <div class="window-bar">
         <span class="dots"><i></i><i></i><i></i></span>
-        <span class="mono small" id="officeTitle">PULSE HQ</span>
+        <div class="room-switch">
+          <button class="room-btn mono small" id="roomBtn" aria-haspopup="menu" aria-expanded="false">HEADQUARTER <span aria-hidden="true">▾</span></button>
+          <div class="room-menu" id="roomMenu" role="menu" hidden>
+            <button role="menuitem" data-room="hq">🏢 Headquarter</button>
+            <button role="menuitem" data-room="office">🚪 My Office Room</button>
+            <button role="menuitem" data-room="team">👥 Specialised Team</button>
+          </div>
+        </div>
         <span class="small live" id="liveLabel">● LIVE</span>
       </div>
       <div class="stage" id="stage">
@@ -33,7 +40,8 @@
       <div class="stats" id="stats"></div>
     </section>
 
-    <aside class="panel">
+    <!-- Headquarter: missions, team, logbook, archive -->
+    <aside class="panel" id="hqPanel">
       <nav class="tabs" role="tablist">
         <button role="tab" data-tab="missions" aria-selected="true">মিশন <span class="count" id="pendingCount">0</span></button>
         <button role="tab" data-tab="team">টিম</button>
@@ -42,11 +50,68 @@
       </nav>
       <div class="tab-body" id="tabBody"></div>
     </aside>
+
+    <!-- My Office Room: chat with Pakhi -->
+    <aside class="panel chat-panel" id="officePanel" hidden>
+      <div class="panel-head">
+        <div class="avatar pakhi">প</div>
+        <div><h3>পাখি</h3><p>আপনার অ্যাসিস্ট্যান্ট · লেখা গুছিয়ে সাব্বিরের কাছে পাঠায়</p></div>
+        <button class="ghost small" id="newChat" title="নতুন কথোপকথন">নতুন</button>
+      </div>
+      <div class="chat-log" id="chatLog" aria-live="polite"></div>
+      <div class="requests" id="requests"></div>
+      <form class="chat-form" id="chatForm">
+        <div class="thumbs" id="thumbs"></div>
+        <div class="chat-row">
+          <label class="attach" title="ছবি যোগ করুন (সর্বোচ্চ ৩টা)">📎<input type="file" id="chatFiles" accept="image/*" multiple hidden></label>
+          <textarea id="chatInput" rows="2" placeholder="পাখিকে লিখুন: কী পোস্ট করতে চান, বিস্তারিতসহ…"></textarea>
+          <button type="submit" class="send" id="chatSend">পাঠান</button>
+        </div>
+      </form>
+    </aside>
+
+    <!-- Specialised Team: bots the owner adds -->
+    <aside class="panel" id="teamPanel" hidden>
+      <div class="panel-head">
+        <div><h3>Specialised Team</h3><p>নির্দিষ্ট টপিকের বট। চালু করুন, চালিয়ে দেখুন, ফলাফল যাচাই করুন।</p></div>
+        <button class="send small" id="addBot">+ নতুন বট</button>
+      </div>
+      <div class="tab-body" id="botList"></div>
+    </aside>
   </main>
 
   <dialog id="draftDialog">
     <form method="dialog"><button class="close" aria-label="বন্ধ করুন">✕</button></form>
     <div id="dialogBody"></div>
+  </dialog>
+
+  <dialog id="botDialog">
+    <form method="dialog"><button class="close" aria-label="বন্ধ করুন">✕</button></form>
+    <form id="botForm" class="bot-form">
+      <h2 id="botFormTitle">নতুন বট</h2>
+      <input type="hidden" name="id">
+      <label>নাম <input name="name" required maxlength="40" placeholder="যেমন: Tuku"></label>
+      <label>টপিক <textarea name="topic" required rows="2" maxlength="500" placeholder="যেমন: বাংলাদেশের ক্রিকেটের খবর, ম্যাচের ফল আর সূচি"></textarea></label>
+      <label>সোর্স (RSS লিংক, প্রতি লাইনে একটা)
+        <textarea name="rss" rows="3" placeholder="https://example.com/feed"></textarea>
+      </label>
+      <div class="checks">
+        <label><input type="checkbox" name="localoy"> Localoy ইভেন্ট</label>
+        <label><input type="checkbox" name="onthisday"> Wikipedia: ইতিহাসের এই দিনে</label>
+      </div>
+      <p class="hint">কোনো সোর্স না দিলে বট টপিক দিয়ে Google News-এ খুঁজবে।</p>
+      <div class="row2">
+        <label>দিনে কয়টা পোস্ট
+          <select name="postsPerDay"><option>1</option><option>2</option><option>3</option></select>
+        </label>
+        <label class="switch"><input type="checkbox" name="active" checked> চালু (শিফটে কাজ করবে)</label>
+      </div>
+      <p class="form-error" id="botError" role="alert"></p>
+      <div class="row2">
+        <button type="button" class="ghost danger" id="deleteBot" hidden>মুছে ফেলুন</button>
+        <button type="submit" class="send">সেভ করুন</button>
+      </div>
+    </form>
   </dialog>
 
   <script type="module" src="app.js"></script>

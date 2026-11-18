@@ -12,6 +12,8 @@
     "reject": "tsx src/cli.ts reject",
     "telegram": "tsx src/cli.ts telegram",
     "sync": "tsx src/cli.ts sync",
+    "inbox": "tsx src/cli.ts inbox",
+    "bot": "tsx src/cli.ts bot",
     "test-telegram": "tsx src/cli.ts test-telegram",
     "publish": "tsx src/cli.ts publish",
     "retry": "tsx src/cli.ts retry",

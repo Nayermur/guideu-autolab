@@ -40,14 +40,71 @@ export const LOOKS = {
   critic:   { skin: "#8d5524", hair: "#2a1a10", shirt: "#ef476f", pants: "#22223b", cap: "#22223b", accent: "#ff6b81" },
 };
 
-// Desk layout. `seat` is where the agent sits; `face` is which way they look while seated.
-const DESKS = {
+// Desk layout. `seat` is where the agent sits.
+const HQ_DESKS = {
   scout:    { gx: 1.0, gy: 0.6, w: 1.9, d: 0.9, seat: [1.95, 2.05], prop: "globe" },
   verifier: { gx: 4.0, gy: 0.6, w: 1.9, d: 0.9, seat: [4.95, 2.05], prop: "papers" },
   writer:   { gx: 7.0, gy: 0.6, w: 1.9, d: 0.9, seat: [7.95, 2.05], prop: "typewriter" },
   designer: { gx: 0.6, gy: 4.6, w: 0.9, d: 1.9, seat: [2.05, 5.55], prop: "dual" },
   critic:   { gx: 6.4, gy: 6.4, w: 1.9, d: 0.9, seat: [7.35, 7.85], prop: "clipboard" },
 };
+
+// ---------- rooms ----------
+// Pakhi, the owner's assistant (My Office Room).
+export const PAKHI_LOOK = { skin: "#e8b98a", hair: "#1a1a1a", longHair: true, dress: "#14b8a6", shirt: "#14b8a6", pants: "#14b8a6", flower: "#ff6b9d", accent: "#5eead4" };
+const OFFICE_DESKS = { pakhi: { gx: 4.0, gy: 0.6, w: 1.9, d: 0.9, seat: [4.95, 2.05], prop: "typewriter" } };
+
+// Desk slots for Specialised Team bots, in the order bots are added.
+export const TEAM_SLOTS = [
+  { gx: 1.0, gy: 0.6, w: 1.9, d: 0.9, seat: [1.95, 2.05] },
+  { gx: 4.0, gy: 0.6, w: 1.9, d: 0.9, seat: [4.95, 2.05] },
+  { gx: 7.0, gy: 0.6, w: 1.9, d: 0.9, seat: [7.95, 2.05] },
+  { gx: 0.6, gy: 4.6, w: 0.9, d: 1.9, seat: [2.05, 5.55], side: true },
+  { gx: 6.4, gy: 6.4, w: 1.9, d: 0.9, seat: [7.35, 7.85] },
+  { gx: 3.4, gy: 3.6, w: 1.9, d: 0.9, seat: [4.35, 5.05] },
+  { gx: 6.2, gy: 3.6, w: 1.9, d: 0.9, seat: [7.15, 5.05] },
+  { gx: 0.6, gy: 7.0, w: 0.9, d: 1.6, seat: [2.05, 7.8], side: true },
+];
+const PROPS = ["papers", "typewriter", "globe", "clipboard"];
+
+/** A stable, varied pixel look for a bot, derived from its name. */
+export function botLook(name) {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  const pick = (arr, salt) => arr[(h >>> salt) % arr.length];
+  const female = (h & 1) === 1;
+  const look = {
+    skin: pick(["#f1c27d", "#e0ac69", "#c68642", "#8d5524", "#f5d0b0"], 1),
+    hair: pick(["#1d1d1d", "#3b2416", "#6b3e26", "#b5179e", "#2a1a10", "#c9a227"], 4),
+    shirt: pick(["#4f9d69", "#6c8cff", "#f2994a", "#ef476f", "#9b5de5", "#00bbf9", "#f15bb5", "#80ed99"], 7),
+    pants: pick(["#2f3b52", "#2b2b3d", "#39424e", "#3a2e5c"], 10),
+  };
+  look.accent = look.shirt;
+  if (female) Object.assign(look, { longHair: true, dress: look.shirt, pants: look.shirt });
+  const extra = (h >>> 13) % 5;
+  if (extra === 0) look.glasses = true;
+  else if (extra === 1) look.headphones = true;
+  else if (extra === 2 && !female) look.cap = pick(["#22223b", "#e63946", "#264653"], 16);
+  else if (extra === 3 && female) look.flower = pick(["#ff6b9d", "#ffd166", "#ffffff"], 16);
+  return look;
+}
+
+/** Room definitions: which desks exist and how each person looks. */
+export function makeScene(kind, bots = []) {
+  if (kind === "office") return { desks: OFFICE_DESKS, looks: { pakhi: PAKHI_LOOK } };
+  if (kind === "team") {
+    const desks = {}, looks = {};
+    bots.slice(0, TEAM_SLOTS.length).forEach((b, i) => {
+      desks[b.id] = { ...TEAM_SLOTS[i], prop: TEAM_SLOTS[i].side ? "dual" : PROPS[i % PROPS.length] };
+      looks[b.id] = botLook(b.name);
+    });
+    return { desks, looks };
+  }
+  return { desks: HQ_DESKS, looks: LOOKS };
+}
+
+let DESKS = HQ_DESKS;
+let CUR_LOOKS = LOOKS;
 
 // Places idle agents like to visit.
 const SPOTS = [
@@ -126,14 +183,14 @@ function furniture(t, agents) {
       box(ctx, d.gx + d.w - 0.17, d.gy + d.d - 0.17, 0.12, 0.12, 13, "#5c3a1a");
       box(ctx, d.gx + 0.05, d.gy + d.d - 0.17, 0.12, 0.12, 13, "#5c3a1a");
       box(ctx, d.gx + d.w - 0.17, d.gy + 0.05, 0.12, 0.12, 13, "#5c3a1a");
-      drawProp(ctx, key, d, t, working, err);
+      drawProp(ctx, d, t, working, err, CUR_LOOKS[key]?.accent ?? "#8fb3ff");
     });
     // chair
     const [cx, cy] = d.seat;
     add(cx + cy + 0.3, (ctx) => {
       box(ctx, cx - 0.3, cy - 0.3, 0.6, 0.6, 2, "#3d3d5c", 7);
       box(ctx, cx - 0.06, cy - 0.06, 0.12, 0.12, 7, "#222");
-      if (key === "designer") box(ctx, cx + 0.22, cy - 0.3, 0.1, 0.6, 10, "#3d3d5c", 9);
+      if (d.prop === "dual") box(ctx, cx + 0.22, cy - 0.3, 0.1, 0.6, 10, "#3d3d5c", 9);
       else box(ctx, cx - 0.3, cy + 0.22, 0.6, 0.1, 10, "#3d3d5c", 9);
     });
   }
@@ -188,10 +245,10 @@ function screen(ctx, pts, on, t, accent) {
   }
 }
 
-function drawProp(ctx, key, d, t, working, err) {
+function drawProp(ctx, d, t, working, err, lookAccent) {
   const z = 16;
-  const accent = err ? "#ff4d4d" : LOOKS[key].accent;
-  if (key === "designer") {
+  const accent = err ? "#ff4d4d" : lookAccent;
+  if (d.prop === "dual") {
     // two monitors facing +gx (toward the chair)
     for (const oy of [0.15, 1.0]) {
       box(ctx, d.gx + 0.15, d.gy + oy, 0.15, 0.75, 14, "#2b2d42", z);
@@ -204,19 +261,19 @@ function drawProp(ctx, key, d, t, working, err) {
   box(ctx, d.gx + 0.5, d.gy + 0.2, 0.9, 0.15, 15, "#2b2d42", z);
   screen(ctx, [iso(d.gx + 0.56, d.gy + 0.36, z + 2), iso(d.gx + 1.34, d.gy + 0.36, z + 2), iso(d.gx + 1.34, d.gy + 0.36, z + 13), iso(d.gx + 0.56, d.gy + 0.36, z + 13)], working, t, accent);
   box(ctx, d.gx + 0.6, d.gy + 0.55, 0.7, 0.2, 1, "#d9d9d9", z); // keyboard
-  if (key === "scout") {
+  if (d.prop === "globe") {
     box(ctx, d.gx + 1.55, d.gy + 0.3, 0.2, 0.2, 3, "#6b4423", z);
     const [x, y] = iso(d.gx + 1.65, d.gy + 0.4, z + 3);
     ctx.fillStyle = "#3a86ff"; ctx.fillRect(Math.round(x) - 3, Math.round(y) - 7, 6, 6);
     ctx.fillStyle = "#52b788"; ctx.fillRect(Math.round(x) - 2, Math.round(y) - 6, 3, 2); ctx.fillRect(Math.round(x), Math.round(y) - 4, 2, 2);
-  } else if (key === "verifier") {
+  } else if (d.prop === "papers") {
     box(ctx, d.gx + 0.1, d.gy + 0.2, 0.35, 0.5, 6, "#f8f9fa", z);
     box(ctx, d.gx + 1.5, d.gy + 0.25, 0.3, 0.4, 4, "#f1faee", z);
-  } else if (key === "writer") {
+  } else if (d.prop === "typewriter") {
     box(ctx, d.gx + 1.45, d.gy + 0.25, 0.4, 0.4, 4, "#495057", z);
     box(ctx, d.gx + 1.5, d.gy + 0.25, 0.3, 0.06, 4, "#f8f9fa", z + 4);
     box(ctx, d.gx + 0.15, d.gy + 0.5, 0.18, 0.18, 4, "#e63946", z); // mug
-  } else if (key === "critic") {
+  } else if (d.prop === "clipboard") {
     box(ctx, d.gx + 1.45, d.gy + 0.3, 0.35, 0.45, 1, "#c08552", z);
     box(ctx, d.gx + 1.5, d.gy + 0.35, 0.25, 0.35, 1, "#ffffff", z + 1);
     box(ctx, d.gx + 0.12, d.gy + 0.3, 0.3, 0.06, 1, "#e63946", z); // red pen
@@ -275,6 +332,16 @@ function drawPerson(ctx, x, y, look, { frame = 0, back = false, seated = false, 
     px(ctx, x - 1, by - 12, 2, 1, shade(look.skin, 0.75));
     if (look.glasses) { px(ctx, x - 3, by - 14, 6, 1, "#222"); px(ctx, x - 2, by - 14, 1, 1, "#9ad1ff"); px(ctx, x + 1, by - 14, 1, 1, "#9ad1ff"); }
   }
+  // long hair and dress (drawn over the base figure)
+  if (look.longHair) {
+    if (back) px(ctx, x - 3, by - 12, 6, 3, look.hair);
+    else { px(ctx, x - 4, by - 16, 1, 6, look.hair); px(ctx, x + 3, by - 16, 1, 6, look.hair); }
+  }
+  if (look.dress && !seated) {
+    px(ctx, x - 4, by - 6, 8, 2, look.dress);
+    px(ctx, x - 5, by - 4, 10, 1, look.dress);
+  }
+  if (look.flower && !back) { px(ctx, x + 2, by - 18, 2, 2, look.flower); px(ctx, x + 2, by - 18, 1, 1, "#fff8"); }
   // accessories
   if (look.hat) { px(ctx, x - 5, by - 18, 10, 1, look.hat); px(ctx, x - 3, by - 20, 6, 2, look.hat); }
   if (look.beanie) { px(ctx, x - 3, by - 19, 6, 2, look.beanie); px(ctx, x - 1, by - 20, 2, 1, "#fff"); }
@@ -284,22 +351,31 @@ function drawPerson(ctx, x, y, look, { frame = 0, back = false, seated = false, 
 
 // ---------- simulation ----------
 export class Office {
-  constructor(canvas, onLayout) {
+  constructor(canvas, onLayout, scene = makeScene("hq")) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
     canvas.width = W;
     canvas.height = H;
     this.onLayout = onLayout;    // callback(list of {key, x, y}) for DOM name tags
     this.agents = {};            // key -> { status, activity }
-    this.people = {};
-    for (const [key, d] of Object.entries(DESKS)) {
-      const [sx, sy] = SPOTS[Object.keys(DESKS).indexOf(key) % SPOTS.length];
-      this.people[key] = { key, gx: sx, gy: sy, target: null, wait: Math.random() * 3000, frame: 0, seated: false, desk: d };
-    }
+    this.setScene(scene);
     this.last = performance.now();
     this.hour = 12;
     this.reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     requestAnimationFrame((t) => this.loop(t));
+  }
+
+  /** Switches the room (Headquarter, My Office Room, Specialised Team). */
+  setScene(scene) {
+    this.scene = scene;
+    DESKS = scene.desks;
+    CUR_LOOKS = scene.looks;
+    const old = this.people ?? {};
+    this.people = {};
+    Object.entries(DESKS).forEach(([key, d], i) => {
+      const [sx, sy] = SPOTS[i % SPOTS.length];
+      this.people[key] = old[key] ? { ...old[key], desk: d } : { key, gx: sx, gy: sy, target: null, wait: Math.random() * 3000, frame: 0, seated: false, desk: d };
+    });
   }
 
   setAgents(agents, hour) {
@@ -357,8 +433,8 @@ export class Office {
         depth: p.gx + p.gy + (p.seated ? 0.35 : 0.05),
         draw: (c) => {
           const [x, y] = iso(p.gx, p.gy);
-          const seatedBack = p.seated && p.key !== "designer";
-          drawPerson(c, x, y, LOOKS[p.key], {
+          const seatedBack = p.seated && p.desk.prop !== "dual";
+          drawPerson(c, x, y, CUR_LOOKS[p.key], {
             frame: p.frame,
             back: p.seated ? seatedBack : p.back,
             seated: p.seated,

@@ -98,9 +98,9 @@ export async function write(niche: Niche, item: FeedItem, angle: string, facts: 
     system: persona(
       "writer",
       niche,
-      `Your job: write an Instagram post in ${team.language}. Use ONLY the verified facts given to you; never invent numbers, names, dates, prices or quotes. Keep English names of events, games, films, products and companies as they are.`,
+      `Your job: write an Instagram post in ${team.language}. Use ONLY the verified facts given to you; never invent numbers, names, dates, prices or quotes. Keep English names of events, games, films, products and companies as they are. Never mention "verified facts", sources you were given, the team, AI or how the post was made: write as the page speaking to its followers. The headline, subline and caption MUST be in ${team.language} even when the facts are in English.`,
     ),
-    prompt: `Item: ${item.title}\nAngle: ${angle}\nVerified facts:\n- ${facts.join("\n- ")}\nSource: ${item.feed}${revision}\n\nReturn JSON:\n{"headline":"<${headlineRule}>","subline":"<${sublineRule}>","caption":"<Instagram caption: ${CAPTION_RULES[niche.format]} Max 1200 characters. No hashtags here.>","hashtags":["#tag", "... 3 to 6 relevant tags; no years, numbers or names unless they appear in the verified facts"]}`,
+    prompt: `Item: ${item.title}\nAngle: ${angle}\nVerified facts:\n- ${facts.join("\n- ")}\n${niche.id === "office" ? "This is the page's own post, written from the owner's notes: do not mention any source, website or assistant." : `Source: ${item.feed}`}${revision}\n\nReturn JSON:\n{"headline":"<${headlineRule}>","subline":"<${sublineRule}>","caption":"<Instagram caption: ${CAPTION_RULES[niche.format]} Max 1200 characters. No hashtags here.>","hashtags":["#tag", "... 3 to 6 relevant tags; no years, numbers or names unless they appear in the verified facts"]}`,
     temperature: 0.8,
   });
 }
@@ -110,6 +110,8 @@ export interface Review {
   score: number;
   approve: boolean;
   feedback: string;
+  /** Every problem still present in the post. Any item blocks approval. */
+  issues?: string[];
 }
 
 export async function critique(niche: Niche, item: FeedItem, facts: string[], copy: Copy): Promise<Review> {
@@ -118,13 +120,14 @@ export async function critique(niche: Niche, item: FeedItem, facts: string[], co
     event: "the caption states the date and venue exactly as in the facts and does not invent a time, price or registration details",
     explainer: "the caption tells an interesting story and every fact, date and number appears in the verified facts",
   }[niche.format];
+  const ownPost = niche.id === "office" ? " This is the page's own post from the owner's notes, so it needs no source attribution." : "";
   return generateJson<Review>({
     system: persona(
       "critic",
       niche,
-      `Your job: review the Writer's post before it goes to the owner. Be strict but fair. Check: (1) every claim is supported by the verified facts, (2) the headline hooks without clickbait, (3) natural, correct ${team.language}, (4) ${formatCheck}, (5) neutral and respectful, no sensationalism, (6) length limits (headline <= 9 words, subline <= 16 words), (7) spelling: no typos, repeated words or broken words anywhere. Score 1-10. Approve only if score >= ${team.minCriticScore}, there are no factual problems AND no spelling mistakes; any typo means approve=false with the exact fix in feedback.`,
+      `Your job: review the Writer's post before it goes to the owner. Be strict but fair. Check: (1) every claim is supported by the verified facts, (2) the headline hooks without clickbait, (3) natural, correct ${team.language}, (4) ${formatCheck}, (5) neutral and respectful, no sensationalism, (6) length limits (headline <= 9 words, subline <= 16 words), (7) spelling: no typos, repeated words or broken words anywhere. Score 1-10. Approve only if score >= ${team.minCriticScore}, there are no factual problems AND no spelling mistakes; any typo means approve=false with the exact fix in feedback. You cannot edit the post yourself: never say something "has been fixed". List every problem that is still in the post in "issues"; if "issues" is not empty, approve must be false. Also flag any caption that mentions "verified facts", the team, AI or how the post was made.${ownPost}`,
     ),
-    prompt: `Item: ${item.title}\nVerified facts:\n- ${facts.join("\n- ")}\n\nPost to review:\n${JSON.stringify(copy, null, 2)}\n\nReturn JSON: {"score":<1-10>,"approve":<true|false>,"feedback":"<specific, actionable changes; empty if perfect>"}`,
+    prompt: `Item: ${item.title}\nVerified facts:\n- ${facts.join("\n- ")}\n\nPost to review:\n${JSON.stringify(copy, null, 2)}\n\nReturn JSON: {"score":<1-10>,"approve":<true|false>,"issues":["<each problem still in the post, with the exact fix>"],"feedback":"<specific, actionable changes; empty if perfect>"}`,
     temperature: 0.2,
   });
 }
@@ -133,22 +136,40 @@ export async function critique(niche: Niche, item: FeedItem, facts: string[], co
 export interface DesignBrief {
   kicker: string;
   emoji: string;
-  layout: "bold" | "split" | "minimal" | "event";
+  layout: "bold" | "split" | "minimal" | "event" | "photo-bg" | "photo-card";
+  /** Which of the owner's photos is shown (photo layouts only). */
+  imageIndex?: number;
+  /** How the photo is used: background, poster (main picture), reference (not shown) or none. */
+  imageUse?: "background" | "poster" | "reference" | "none";
 }
 
-export async function designBrief(niche: Niche, copy: Copy, angle: string): Promise<DesignBrief> {
+export async function designBrief(
+  niche: Niche,
+  copy: Copy,
+  angle: string,
+  images: { mimeType: string; data: string }[] = [],
+): Promise<DesignBrief> {
+  const withImages = images.length > 0;
+  const imageRule = withImages
+    ? ` The owner attached ${images.length} photo(s), shown in order (index 0 first). Decide how to use them: "poster" (the photo is the main picture, text below it; best for clear photos of a product, place, person or event flyer), "background" (photo behind the text with a dark overlay; best for atmospheric photos), or "reference" (do not show it, e.g. blurry, a screenshot of text, or not suitable). Pick the best photo index.`
+    : "";
   const res = await generateJson<DesignBrief>({
     system: persona(
       "designer",
       niche,
-      `Your job: choose how the post image should look. Pick a short kicker label (1-2 words in the post language, for example: ${niche.kickers.join(", ")}), one emoji that fits, and a layout: bold (big headline, high energy), split (headline plus clear supporting line) or minimal (calm, serious topics).`,
+      `Your job: choose how the post image should look. Pick a short kicker label (1-2 words in the post language, for example: ${niche.kickers.join(", ")}), one emoji that fits, and a layout: bold (big headline, high energy), split (headline plus clear supporting line) or minimal (calm, serious topics).${imageRule}`,
     ),
-    prompt: `Headline: ${copy.headline}\nSubline: ${copy.subline}\nAngle: ${angle}\n\nReturn JSON: {"kicker":"...","emoji":"...","layout":"bold"|"split"|"minimal"}`,
+    prompt: `Headline: ${copy.headline}\nSubline: ${copy.subline}\nAngle: ${angle}\n\nReturn JSON: {"kicker":"...","emoji":"...","layout":"bold"|"split"|"minimal"${withImages ? ',"imageUse":"poster"|"background"|"reference","imageIndex":<number>' : ""}}`,
     temperature: 0.6,
+    images,
   });
-  // Events always use the poster layout with the date block.
-  if (niche.format === "event") res.layout = "event";
+  const idx = Number(res.imageIndex ?? 0);
+  res.imageIndex = Number.isInteger(idx) && idx >= 0 && idx < images.length ? idx : 0;
+  if (withImages && res.imageUse === "poster") res.layout = "photo-card";
+  else if (withImages && res.imageUse === "background") res.layout = "photo-bg";
+  else if (niche.format === "event") res.layout = "event";
   else if (!["bold", "split", "minimal"].includes(res.layout)) res.layout = "bold";
+  if (!withImages) res.imageUse = "none";
   return res;
 }
 
@@ -158,4 +179,12 @@ export function mixedScriptWords(copy: Copy): string[] {
   const text = [copy.headline, copy.subline, copy.caption].join(" ");
   const words = text.match(/[\p{L}\p{M}]+/gu) ?? [];
   return [...new Set(words.filter((w) => /[\u0980-\u09FF]/.test(w) && /[A-Za-z]/.test(w)))];
+}
+
+/** Share of letters that are Bangla script (0..1), used to catch captions written in the wrong language. */
+export function banglaShare(copy: Copy): number {
+  const text = [copy.headline, copy.subline, copy.caption].join(" ");
+  const bangla = (text.match(/[\u0980-\u09FF]/g) ?? []).length;
+  const latin = (text.match(/[A-Za-z]/g) ?? []).length;
+  return bangla + latin ? bangla / (bangla + latin) : 1;
 }

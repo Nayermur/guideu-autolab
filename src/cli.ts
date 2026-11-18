@@ -1,6 +1,6 @@
 import { team, env, enabledNiches } from "./config.js";
 import { generate } from "./llm.js";
-import { runCycle, decide, syncApprovals, retry } from "./pipeline.js";
+import { runCycle, decide, syncApprovals, retry, runInbox, runBot } from "./pipeline.js";
 import { instagramEnabled, publishApproved } from "./instagram.js";
 import { loadState } from "./store.js";
 import { processTelegramUpdates, testTelegram } from "./telegram.js";
@@ -55,8 +55,22 @@ async function main() {
       console.log(await testTelegram());
       break;
     }
+    case "inbox": {
+      const drafts = await runInbox();
+      console.log(`${drafts.length} draft(s) made from Pakhi's requests.`);
+      break;
+    }
+    case "bot": {
+      const id = arg || process.env.BOT_ID;
+      if (!id) throw new Error("Usage: npm run bot -- <bot-id>");
+      const drafts = await runBot(id);
+      console.log(`${drafts.length} draft(s) made by bot ${id}.`);
+      break;
+    }
     case "sync": {
       await syncApprovals();
+      // Pakhi's requests are picked up here too, in case the immediate run was skipped.
+      await runInbox();
       console.log(`Approvals synced. Instagram publishing: ${instagramEnabled() ? "on" : "off (IG_USER_ID / IG_ACCESS_TOKEN not set)"}`);
       break;
     }
@@ -112,6 +126,8 @@ async function main() {
   npm run reject -- <id>         reject a draft
   npm run telegram               sync Telegram button presses
   npm run test-telegram          send a test message to check the Telegram setup
+  npm run inbox                  turn Pakhi's requests into drafts
+  npm run bot -- <id>            run one Specialised Team bot now
   npm run sync                   sync Telegram + publish approved posts to Instagram
   npm run publish                publish approved posts to Instagram now
   npm run retry -- <id>          try publishing a failed post again

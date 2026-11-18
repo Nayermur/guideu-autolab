@@ -1,5 +1,5 @@
 // Builds the static dashboard into public/: the dashboard files, team.json, the team's state and post images.
-import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, copyFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, copyFileSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -15,6 +15,21 @@ copyFileSync(resolve(root, "team.json"), resolve(out, "team.json"));
 
 const state = resolve(root, "data/state.json");
 if (existsSync(state)) copyFileSync(state, resolve(out, "data/state.json"));
+
+// Specialised Team bots
+const botsFile = resolve(root, "data/bots.json");
+if (existsSync(botsFile)) copyFileSync(botsFile, resolve(out, "data/bots.json"));
+
+// A light index of Pakhi's requests (status only; photos stay private)
+const inboxDir = resolve(root, "data/inbox");
+const requests = existsSync(inboxDir)
+  ? readdirSync(inboxDir)
+      .filter((f) => f.endsWith(".json"))
+      .map((f) => JSON.parse(readFileSync(resolve(inboxDir, f), "utf8")))
+      .map(({ id, title, status, createdAt, draftId, error }) => ({ id, title, status, createdAt, draftId, error }))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+  : [];
+writeFileSync(resolve(out, "data/inbox-index.json"), JSON.stringify({ requests }));
 
 let images = 0;
 const outputDir = resolve(root, "output");

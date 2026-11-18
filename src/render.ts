@@ -26,7 +26,8 @@ export function eventDate(ev: EventInfo) {
 }
 
 /** Builds the 1080x1350 Instagram portrait post as HTML. Edit this to change your visual style. */
-export function postHtml(o: { headline: string; subline: string; source: string; brief: DesignBrief; event?: EventInfo }): string {
+export function postHtml(o: { headline: string; subline: string; source: string; brief: DesignBrief; event?: EventInfo; photo?: string }): string {
+  if (o.photo && (o.brief.layout === "photo-bg" || o.brief.layout === "photo-card")) return photoPosterHtml({ ...o, photo: o.photo });
   if (o.event && o.brief.layout === "event") return eventPosterHtml({ ...o, event: o.event });
   const b = team.brand;
   const big = o.brief.layout === "bold";
@@ -113,6 +114,53 @@ function eventPosterHtml(o: { headline: string; subline: string; source: string;
     <div class="sub">${esc(o.subline)}</div>
     ${where ? `<div class="where"><span>📍</span><span>${esc(where)}</span></div>` : ""}
     <div class="foot"><span>${o.event.organizer ? `${team.language.toLowerCase() === "bangla" ? "আয়োজক" : "Organizer"}: ${esc(o.event.organizer)}` : ""}</span><span>${esc(b.handle)}</span></div>
+  </div>
+</body></html>`;
+}
+
+/** Posts built around the owner's photo: full background with overlay, or a photo card with text below. */
+function photoPosterHtml(o: { headline: string; subline: string; source: string; brief: DesignBrief; event?: EventInfo; photo: string }): string {
+  const b = team.brand;
+  const bg = o.brief.layout === "photo-bg";
+  const date = o.event ? eventDate(o.event) : null;
+  const where = o.event ? [o.event.venue, o.event.area].filter(Boolean).join(", ") : "";
+  const headlineSize = bg
+    ? (o.headline.length > 50 ? 70 : o.headline.length > 30 ? 82 : 96)
+    : (o.headline.length > 50 ? 58 : o.headline.length > 30 ? 66 : 78);
+  return `<!doctype html><html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@500;700&family=Space+Grotesk:wght@500;700&display=block" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1080px; height: 1350px; background: ${b.background}; color: ${b.text};
+    font-family: "Hind Siliguri", "Space Grotesk", sans-serif; overflow: hidden; position: relative; }
+  .photo { position: absolute; left: 0; top: 0; width: 1080px; height: ${bg ? "1350px" : "640px"};
+    background: url("${o.photo}") center / cover no-repeat; }
+  .shade { position: absolute; inset: 0; background: ${bg
+    ? `linear-gradient(180deg, ${b.background}cc 0%, ${b.background}22 28%, ${b.background}bb 50%, ${b.background}f2 66%, ${b.background} 85%)`
+    : `linear-gradient(180deg, ${b.background}99 0px, transparent 180px, transparent 470px, ${b.background} 640px)`}; }
+  /* Card: the photo fills the top, the text gets its own area below it so they never overlap. */
+  .wrap { position: absolute; ${bg ? "inset: 90px;" : "left: 90px; right: 90px; top: 650px; bottom: 60px;"} display: flex; flex-direction: column; }
+  .top { position: absolute; top: 90px; left: 90px; display: flex; align-items: center; gap: 18px; font-family: "Space Grotesk", sans-serif; font-size: 30px;
+    letter-spacing: 6px; text-transform: uppercase; text-shadow: 0 2px 12px #0008; }
+  .dot { width: 18px; height: 18px; border-radius: 50%; background: ${b.accent}; }
+  .row { margin-top: ${bg ? "auto" : "0"}; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .kicker { background: ${b.accent}; color: #fff; font-weight: 700; font-size: 34px; padding: 10px 26px; border-radius: 12px; }
+  .date { background: ${b.text}; color: ${b.background}; font-weight: 700; font-size: 34px; padding: 10px 24px; border-radius: 12px; }
+  h1 { font-weight: 700; font-size: ${headlineSize}px; line-height: 1.15; margin-top: ${bg ? 26 : 22}px; text-shadow: 0 2px 18px #0009; }
+  .sub { font-weight: 500; font-size: ${bg ? 40 : 34}px; line-height: 1.45; opacity: .9; margin-top: ${bg ? 22 : 16}px; }
+  .where { margin-top: ${bg ? 22 : 16}px; font-size: ${bg ? 36 : 32}px; font-weight: 700; }
+  .foot { margin-top: ${bg ? "44px" : "auto"}; padding-top: 26px; border-top: 2px solid ${b.text}33; display: flex; justify-content: flex-end;
+    font-family: "Space Grotesk", sans-serif; font-size: 28px; opacity: .8; letter-spacing: 1px; }
+</style></head><body>
+  <div class="photo"></div><div class="shade"></div>
+  <div class="top"><span class="dot"></span>${esc(b.name)}</div>
+  <div class="wrap">
+    <div class="row"><span class="kicker">${esc(o.brief.kicker)}</span>${date ? `<span class="date">${esc(date.big)} ${esc(date.small)}</span>` : ""}</div>
+    <h1>${esc(o.headline)}</h1>
+    <div class="sub">${esc(o.subline)}</div>
+    ${where ? `<div class="where">📍 ${esc(where)}</div>` : ""}
+    <div class="foot"><span>${esc(b.handle)}</span></div>
   </div>
 </body></html>`;
 }
