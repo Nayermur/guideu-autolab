@@ -1,12 +1,18 @@
 // Shared helpers for the dashboard's server functions (Vercel). Files starting with "_" are not routes.
-// The login middleware already protects every /api/* request.
+// The login middleware already protects every /api/* request; each function still reads the session
+// (requireSession) to know which customer it works for.
+
+import { readSession } from "./_session.js";
+import { decryptSecrets } from "./_crypto.js";
 //
 // Vercel environment variables:
 //   GEMINI_API_KEY          Pakhi's AI
 //   DASHBOARD_GITHUB_TOKEN  fine-grained token: data repo Contents read/write + code repo Actions read/write
 //   DATA_REPO               e.g. "your-name/autolab-data"
 //   CODE_REPO               e.g. "your-name/autolab"
-//   DEFAULT_TENANT          the customer this dashboard works for (default "guideu")
+//   DEFAULT_TENANT          the admin's own customer (default "guideu")
+//   TENANT_SECRETS_KEY      unlocks customers' keys (same value as the GitHub secret)
+//   AUTH_SECRET             signs login sessions
 //
 // Each customer's files live in the data repo under tenants/<id>/ (data/, output/, settings.json, secrets.json).
 
@@ -17,7 +23,15 @@ export const env = {
   dataRepo: process.env.DATA_REPO || "",
   codeRepo: process.env.CODE_REPO || "",
   tenant: process.env.DEFAULT_TENANT || "guideu",
+  githubApi: process.env.GITHUB_API_URL || "https://api.github.com",
 };
+
+/** The logged-in user: { email, tenant, role }. Throws a 401 error when there is no valid session. */
+export async function requireSession(req) {
+  const s = await readSession(process.env.AUTH_SECRET, req.headers?.cookie);
+  if (!s) throw Object.assign(new Error("Please log in again"), { status: 401 });
+  return s;
+}
 
 /** Path of a file in a customer's folder in the data repo, e.g. tenantPath("data/bots.json"). */
 export const tenantPath = (path, tenant = env.tenant) => `tenants/${tenant}/${path}`;
@@ -29,8 +43,8 @@ export function send(res, status, body) {
 }
 
 /** Calls Gemini with JSON output, trying each model in turn. `images` are {mimeType, data(base64)}. */
-export async function gemini({ system, contents, images = [], temperature = 0.4 }) {
-  if (!env.geminiKey) throw new Error("GEMINI_API_KEY is not set in Vercel");
+export async function gemini({ system, contents, images = [], temperature = 0.4, key = env.geminiKey }) {
+  if (!key) throw new Error("No Gemini API key: add yours in Setup");
   const last = contents[contents.length - 1];
   const body = {
     systemInstruction: { parts: [{ text: system }] },
@@ -48,7 +62,7 @@ export async function gemini({ system, contents, images = [], temperature = 0.4 
     try {
       const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-goog-api-key": env.geminiKey },
+        headers: { "Content-Type": "application/json", "X-goog-api-key": key },
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(25_000),
       });
@@ -65,7 +79,7 @@ export async function gemini({ system, contents, images = [], temperature = 0.4 
 
 async function github(path, init = {}) {
   if (!env.githubToken) throw new Error("DASHBOARD_GITHUB_TOKEN is not set in Vercel");
-  const r = await fetch(`https://api.github.com${path}`, {
+  const r = await fetch(`${env.githubApi}${path}`, {
     ...init,
     headers: {
       Authorization: `Bearer ${env.githubToken}`,
@@ -124,12 +138,38 @@ export const newId = (prefix = "") =>
   `${prefix}${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 7)}`;
 
 /** Saves an Approve/Reject decision for the team and starts a sync right away. */
-export async function recordDecision({ draftId, decision, via, chatId }) {
+export async function recordDecision({ draftId, decision, via, chatId, tenant = env.tenant }) {
   if (!/^[\w-]{1,60}$/.test(draftId)) throw new Error("Bad draft id");
   if (!["approved", "rejected"].includes(decision)) throw new Error("Bad decision");
   const at = new Date().toISOString();
   const body = { draftId, decision, at, via, ...(chatId ? { chatId: String(chatId) } : {}) };
-  await writeDataFile(tenantPath(`data/decisions/${draftId}-${Date.now()}.json`), JSON.stringify(body, null, 2) + "\n", `${decision} ${draftId} (${via})`);
-  await startWorkflow({ mode: "telegram" });
+  await writeDataFile(tenantPath(`data/decisions/${draftId}-${Date.now()}.json`, tenant), JSON.stringify(body, null, 2) + "\n", `${decision} ${draftId} (${via})`);
+  await startWorkflow({ mode: "telegram" }, tenant);
   return body;
 }
+
+// ---------- customers ----------
+/** The customer list (tenants/index.json). */
+export async function listTenants() {
+  return (await readDataFile("tenants/index.json"))?.json?.tenants ?? [];
+}
+
+/** A customer's name, page brand and status. */
+export async function tenantProfile(tenant) {
+  const [list, settings] = await Promise.all([listTenants(), readDataFile(tenantPath("settings.json", tenant))]);
+  const info = list.find((t) => t.id === tenant);
+  if (!info) throw Object.assign(new Error("Unknown customer"), { status: 404 });
+  const s = settings?.json ?? {};
+  return { ...info, brand: { name: s.brand?.name || info.name, handle: s.brand?.handle || "" } };
+}
+
+/** A customer's own keys (decrypted). The admin's own customer falls back to the keys set in Vercel. */
+export async function tenantSecrets(tenant, profile) {
+  const file = await readDataFile(tenantPath("secrets.json", tenant));
+  const secrets = file ? decryptSecrets(file.json) : {};
+  if (profile?.owner && !secrets.geminiKey) secrets.geminiKey = env.geminiKey;
+  return secrets;
+}
+
+/** Sends an error from a server function with the right status. */
+export const fail = (res, e) => send(res, e.status || 500, { error: e.message });

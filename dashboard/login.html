@@ -77,7 +77,13 @@
     </div>
   </main>
   <script>
-    if (new URLSearchParams(location.search).has("error")) document.getElementById("error").classList.add("show");
+    const code = new URLSearchParams(location.search).get("error");
+    if (code) {
+      const box = document.getElementById("error");
+      if (code === "2") box.textContent = "এই অ্যাকাউন্টটা এখন বন্ধ আছে। আমাদের সাথে যোগাযোগ করুন।";
+      if (code === "3") box.textContent = "এই মুহূর্তে লগইন করা যাচ্ছে না। একটু পরে আবার চেষ্টা করুন।";
+      box.classList.add("show");
+    }
   </script>
 </body>
 </html>

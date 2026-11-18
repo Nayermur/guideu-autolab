@@ -4,9 +4,8 @@
 // POST { action: "run", id }     → starts the bot right away
 // → { ok, bots }
 
-import { send, readDataFile, writeDataFile, startWorkflow, newId, tenantPath } from "./_lib.js";
+import { send, fail, readDataFile, writeDataFile, startWorkflow, newId, tenantPath, requireSession } from "./_lib.js";
 
-const FILE = tenantPath("data/bots.json");
 
 function cleanBot(b, existing) {
   const name = String(b.name || "").trim().slice(0, 40);
@@ -33,6 +32,8 @@ function cleanBot(b, existing) {
 export default async function handler(req, res) {
   if (req.method !== "POST") return send(res, 405, { error: "POST only" });
   try {
+    const { tenant } = await requireSession(req);
+    const FILE = tenantPath("data/bots.json", tenant);
     const { action } = req.body ?? {};
     const file = await readDataFile(FILE);
     const bots = file?.json?.bots ?? [];
@@ -40,7 +41,7 @@ export default async function handler(req, res) {
     if (action === "run") {
       const bot = bots.find((b) => b.id === req.body.id);
       if (!bot) return send(res, 404, { error: "Bot not found" });
-      await startWorkflow({ mode: "bot", bot: bot.id });
+      await startWorkflow({ mode: "bot", bot: bot.id }, tenant);
       return send(res, 200, { ok: true, bots });
     }
 
@@ -61,6 +62,6 @@ export default async function handler(req, res) {
     await writeDataFile(FILE, JSON.stringify({ bots: next }, null, 2) + "\n", message, file?.sha);
     return send(res, 200, { ok: true, bots: next });
   } catch (e) {
-    return send(res, 500, { error: e.message });
+    return fail(res, e);
   }
 }

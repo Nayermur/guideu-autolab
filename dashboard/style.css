@@ -42,6 +42,8 @@ button { font: inherit; color: inherit; }
 .badge { font-size: 12px; padding: 2px 10px; border-radius: 99px; background: var(--warn); color: #000; }
 .meta { color: var(--muted); font-size: 12px; text-align: right; }
 .logout { color: var(--muted); }
+.account select { background: transparent; color: var(--text); border: 1px solid var(--line, #333); border-radius: 6px; font: inherit; padding: 2px 6px; }
+.account select option { background: #15141c; }
 .logout:hover { color: var(--text); }
 
 .layout {

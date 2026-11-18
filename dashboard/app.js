@@ -53,11 +53,42 @@ function demoState() {
 
 // ---------- data ----------
 // Each customer's files are under t/<id>/ on this site (see scripts/build-dashboard.mjs).
-const TENANT = "guideu";
-const BASE = `t/${TENANT}/`;
+// /api/me says who is logged in and which customer this dashboard shows.
+let me = null;
+let BASE = "";
 const getJson = (url) => fetch(`${url}?t=${Date.now()}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 
+async function whoAmI() {
+  const r = await fetch("/api/me", { cache: "no-store" }).catch(() => null);
+  if (r?.status === 401) return location.replace("/login");
+  me = r?.ok ? await r.json() : null;
+  if (!me?.tenant) throw new Error("Could not load your account");
+  BASE = `t/${me.tenant}/`;
+  renderAccount();
+}
+
+function renderAccount() {
+  const box = $("#account");
+  if (!box) return;
+  if (me.role === "admin" && me.tenants?.length > 1) {
+    box.innerHTML = `<select id="tenantPick" aria-label="কাস্টমার">${me.tenants
+      .map((t) => `<option value="${esc(t.id)}"${t.id === me.tenant ? " selected" : ""}>${esc(t.name)}${t.status === "active" ? "" : " (বন্ধ)"}</option>`)
+      .join("")}</select>`;
+    $("#tenantPick").onchange = async (e) => {
+      try {
+        await api("/api/me", { tenant: e.target.value });
+        location.reload();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+  } else {
+    box.textContent = me.email;
+  }
+}
+
 async function load() {
+  if (!me) await whoAmI();
   if (!team) team = await getJson("team.json");
   let s = await getJson(BASE + "data/state.json");
   if (!s || !s.lastRunAt) s = demoState();
@@ -130,7 +161,7 @@ function render() {
   if (!state) return;
   const fresh = state.lastRunAt && Date.now() - Date.parse(state.lastRunAt) < 9 * 3600_000;
   const anyWorking = Object.values(state.agents).some((a) => a.status === "working");
-  $("#teamName").textContent = (team?.brand?.name ?? "AutoLab").toUpperCase();
+  $("#teamName").textContent = (me?.brand?.name ?? me?.name ?? "AutoLab").toUpperCase();
   $("#demoBadge").hidden = !state.demo;
   $("#liveDot").classList.toggle("on", anyWorking || fresh);
   $("#liveLabel").textContent = anyWorking ? "● শিফট চলছে" : fresh ? "● LIVE" : "● অফলাইন";

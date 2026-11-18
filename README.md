@@ -160,6 +160,7 @@ tenants/<id>/output/            পোস্টের ছবি
 - কী-গুলো `TENANT_SECRETS_KEY` (৩২ বাইট, base64; GitHub secret ও Vercel-এ) দিয়ে AES-256-GCM-এ তালাবদ্ধ থাকে।
 - পেজ মালিকের নিজের টেন্যান্ট (`"owner": true`) GitHub secrets-এর কী ব্যবহার করতে পারে; অন্য কোনো কাস্টমার কখনো সেগুলো পায় না।
 - ওয়ার্কফ্লোর `tenant` ইনপুট খালি থাকলে সব active কাস্টমারের কাজ আলাদা আলাদা জবে একসাথে চলে।
+- লগইন: অ্যাডমিন (Vercel-এর `AUTH_EMAIL`/`AUTH_PASSWORD`) সব কাস্টমার দেখতে পারে, হেডারের মেনু থেকে বদলায়। কাস্টমারের অ্যাকাউন্ট থাকে ডাটা রিপোর `accounts.json`-এ (পাসওয়ার্ড PBKDF2 হ্যাশ করা); সে শুধু নিজের হেডকোয়ার্টার, অফিস আর টিম দেখে।
 - লোকালি: `TENANT=<id> npm run status`, `npm run tenants`, `TENANT=<id> npm run save-secrets < keys.json`
 
 ## নিজের মতো সাজান: `team.json`

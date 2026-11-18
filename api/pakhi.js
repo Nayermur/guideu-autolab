@@ -4,9 +4,9 @@
 // When the owner's notes are complete, Pakhi saves a request (and the photos) to the data repo
 // and starts the team, where Sabbir (Writer) takes over.
 
-import { env, send, gemini, writeDataFile, startWorkflow, newId, tenantPath } from "./_lib.js";
+import { env, send, fail, gemini, writeDataFile, startWorkflow, newId, tenantPath, requireSession, tenantProfile, tenantSecrets } from "./_lib.js";
 
-const SYSTEM = `You are Pakhi (পাখি), the friendly female personal assistant of the owner of the Instagram page "GuideU BD" (@guideu.bd).
+const system = (brand) => `You are Pakhi (পাখি), the friendly female personal assistant of the owner of the Instagram page "${brand.name}"${brand.handle ? ` (${brand.handle})` : ""}.
 You always reply in natural, warm Bangla, short and clear.
 The owner sends you notes, post ideas or details, sometimes with photos (for example an event flyer). Your job:
 1. Understand what post the owner wants.
@@ -40,6 +40,9 @@ function parseImages(list) {
 export default async function handler(req, res) {
   if (req.method !== "POST") return send(res, 405, { error: "POST only" });
   try {
+    const { tenant } = await requireSession(req);
+    const profile = await tenantProfile(tenant);
+    const { geminiKey } = await tenantSecrets(tenant, profile);
     const messages = (Array.isArray(req.body?.messages) ? req.body.messages : [])
       .slice(-16)
       .map((m) => ({ role: m.role === "pakhi" ? "model" : "user", text: String(m.text ?? "").slice(0, 4000) }))
@@ -48,7 +51,7 @@ export default async function handler(req, res) {
     const images = parseImages(req.body?.images);
     if (images.length) messages[messages.length - 1].text += `\n\n(The owner attached ${images.length} photo(s).)`;
 
-    const out = await gemini({ system: SYSTEM, contents: messages, images });
+    const out = await gemini({ system: system(profile.brand), contents: messages, images, key: geminiKey });
     const reply = String(out.reply || "বুঝেছি!");
     if (!out.ready || !out.request) return send(res, 200, { reply, ready: false });
 
@@ -65,7 +68,7 @@ export default async function handler(req, res) {
     for (const [i, img] of images.entries()) {
       const ext = img.mimeType === "image/png" ? "png" : img.mimeType === "image/webp" ? "webp" : "jpg";
       const path = `inbox/${id}/${i + 1}.${ext}`;
-      await writeDataFile(tenantPath(`data/${path}`), Buffer.from(img.data, "base64"), `Pakhi: photo ${i + 1} for ${id}`);
+      await writeDataFile(tenantPath(`data/${path}`, tenant), Buffer.from(img.data, "base64"), `Pakhi: photo ${i + 1} for ${id}`);
       imagePaths.push(path);
     }
     const r = out.request;
@@ -82,10 +85,10 @@ export default async function handler(req, res) {
       images: imagePaths,
     };
     if (!request.facts.length) request.facts = [request.details];
-    await writeDataFile(tenantPath(`data/inbox/${id}.json`), JSON.stringify(request, null, 2) + "\n", `Pakhi: request ${id}`);
-    await startWorkflow({ mode: "inbox" });
+    await writeDataFile(tenantPath(`data/inbox/${id}.json`, tenant), JSON.stringify(request, null, 2) + "\n", `Pakhi: request ${id}`);
+    await startWorkflow({ mode: "inbox" }, tenant);
     return send(res, 200, { reply, ready: true, requestId: id });
   } catch (e) {
-    return send(res, 500, { error: e.message });
+    return fail(res, e);
   }
 }
