@@ -72,7 +72,13 @@ async function github(path, init = {}) {
   if (r.status === 204) return null;
   const j = await r.json().catch(() => ({}));
   if (!r.ok) {
-    const err = new Error(`GitHub ${r.status}: ${j.message ?? "error"}`);
+    // Fine-grained tokens answer 404 (not 403) when a repo or permission is missing, so say which one.
+    const repo = path.split("/").slice(2, 4).join("/");
+    const need = path.includes("/actions/") ? "Actions: Read and write" : "Contents: Read and write";
+    const hint = r.status === 404 || r.status === 403
+      ? ` (token needs access to ${repo} with ${need})`
+      : "";
+    const err = new Error(`GitHub ${r.status}: ${j.message ?? "error"}${hint}`);
     err.status = r.status;
     throw err;
   }
