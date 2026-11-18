@@ -120,38 +120,68 @@ async function fromAi(prompt: string): Promise<FoundImage | null> {
   return null;
 }
 
+/** Shorter search words to try when the full query finds nothing, e.g. "futuristic dystopian arena" → "dystopian arena". */
+function simpler(query: string): string[] {
+  const w = query.trim().split(/\s+/);
+  return w.length > 2 ? [w.slice(-2).join(" "), w.slice(0, 2).join(" ")] : [];
+}
+
 /**
  * Finds a background image. `kind` "real" prefers Wikimedia (actual photos of the subject);
  * "symbolic" spreads work between Openverse and AI by today's usage. Sources over their daily limit,
  * or marked unavailable today (e.g. no AI quota), are skipped.
+ *
+ * So that (almost) every post gets a photo, it keeps trying in this order:
+ *   1. the full search words on the niche's preferred sources, then on every other source
+ *   2. shorter versions of the search words
+ *   3. the niche's general fallback words (e.g. "cinema theater")
  */
 export async function findImage(
   state: State,
-  opts: { query: string; kind: "real" | "symbolic"; aiPrompt?: string; prefer?: ImageSource[] },
+  opts: { query: string; kind: "real" | "symbolic"; aiPrompt?: string; prefer?: ImageSource[]; fallback?: string[] },
 ): Promise<{ image: FoundImage | null; tried: string[] }> {
   const u = usage(state);
-  let order: ImageSource[] = opts.prefer?.length
-    ? [...opts.prefer]
-    : opts.kind === "real" ? ["wikimedia", "openverse", "ai"] : ["openverse", "ai", "wikimedia"];
+  const all: ImageSource[] = opts.kind === "real" ? ["wikimedia", "openverse", "ai"] : ["openverse", "ai", "wikimedia"];
+  let order: ImageSource[] = opts.prefer?.length ? [...opts.prefer] : all;
   // Spread the load: among symbolic sources, the less used one today goes first.
   if (opts.kind === "symbolic" && !opts.prefer?.length) {
     const ratio = (s: ImageSource) => u.counts[s] / DAILY_LIMIT[s];
     order = [...order.filter((s) => s !== "wikimedia").sort((a, b) => ratio(a) - ratio(b)), "wikimedia"];
   }
+  // The preferred sources first, then every other source.
+  order = [...order, ...all.filter((s) => !order.includes(s))];
+
   const tried: string[] = [];
-  for (const src of order) {
-    if (u.unavailable.includes(src)) { tried.push(`${src}: unavailable today`); continue; }
-    if (u.counts[src] >= DAILY_LIMIT[src]) { tried.push(`${src}: daily limit reached`); continue; }
-    try {
-      const image = src === "wikimedia" ? await fromWikimedia(opts.query)
-        : src === "openverse" ? await fromOpenverse(opts.query)
-        : await fromAi(opts.aiPrompt || opts.query);
-      u.counts[src]++;
-      if (image) return { image, tried: [...tried, `${src}: found`] };
-      tried.push(`${src}: nothing suitable`);
-    } catch (e: any) {
-      if (e.quota) u.unavailable.push(src);
-      tried.push(`${src}: ${e.message}`);
+  const skip = new Set<ImageSource>();
+  let aiTried = false;
+  const queries = [...new Set([opts.query, ...simpler(opts.query), ...(opts.fallback ?? [])].map((q) => q.trim()).filter(Boolean))];
+
+  for (const query of queries) {
+    for (const src of order) {
+      if (skip.has(src)) continue;
+      if (u.unavailable.includes(src)) { tried.push(`${src}: unavailable today`); skip.add(src); continue; }
+      if (u.counts[src] >= DAILY_LIMIT[src]) { tried.push(`${src}: daily limit reached`); skip.add(src); continue; }
+      // One AI picture per post is enough: it draws from the scene description, not the search words.
+      if (src === "ai") { if (aiTried) continue; aiTried = true; }
+      try {
+        const image = src === "wikimedia" ? await fromWikimedia(query)
+          : src === "openverse" ? await fromOpenverse(query)
+          : await fromAi(opts.aiPrompt || query);
+        u.counts[src]++;
+        if (image) {
+          // A general niche photo is only a mood picture, not a photo of the subject itself.
+          if (opts.fallback?.includes(query) && image.kind === "real") {
+            image.kind = "symbolic";
+            image.credit = image.credit.replace(/^ছবি:/, "প্রতীকী ছবি:");
+          }
+          return { image, tried: [...tried, `${src} "${query}": found`] };
+        }
+        tried.push(`${src} "${query}": nothing suitable`);
+      } catch (e: any) {
+        if (e.quota) u.unavailable.push(src);
+        skip.add(src); // a failing source is not asked again for this post
+        tried.push(`${src}: ${e.message}`);
+      }
     }
   }
   return { image: null, tried };

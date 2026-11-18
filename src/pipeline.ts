@@ -101,7 +101,7 @@ async function produce(state: State, niche: Niche, item: FeedItem, angle: string
   let imageCredit: string | undefined;
   if (!images.length && team.backgroundImages !== false && brief.imageQuery) {
     setAgent(state, "designer", "working", `Finding a photo: ${brief.imageQuery}`);
-    const { image, tried } = await findImage(state, { query: brief.imageQuery, kind: brief.imageKind === "real" ? "real" : "symbolic", aiPrompt: brief.aiPrompt, prefer: niche.imageSources });
+    const { image, tried } = await findImage(state, { query: brief.imageQuery, kind: brief.imageKind === "real" ? "real" : "symbolic", aiPrompt: brief.aiPrompt, prefer: niche.imageSources, fallback: niche.imageFallback ?? ["Bangladesh", "Dhaka city"] });
     log(state, "designer", `${A.designer.name} photo search "${brief.imageQuery}": ${tried.join(" → ")}`);
     if (image) {
       photo = `data:${image.mimeType};base64,${image.data}`;

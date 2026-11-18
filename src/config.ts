@@ -46,6 +46,8 @@ export interface Niche {
   sources: SourceConfig[];
   /** Optional order of background image sources, e.g. ["ai", "openverse"]. */
   imageSources?: ("wikimedia" | "openverse" | "ai")[];
+  /** General search words used when nothing is found for the post itself, e.g. ["cinema theater"]. */
+  imageFallback?: string[];
 }
 
 export interface TeamConfig {

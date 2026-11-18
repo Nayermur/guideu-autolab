@@ -42,6 +42,11 @@
           "name": "Localoy",
           "daysAhead": 14
         }
+      ],
+      "imageFallback": [
+        "concert crowd",
+        "festival lights",
+        "Dhaka city night"
       ]
     },
     {
@@ -125,6 +130,11 @@
         "wikimedia",
         "openverse",
         "ai"
+      ],
+      "imageFallback": [
+        "Bangladeshi food",
+        "street food",
+        "rice curry"
       ]
     },
     {
@@ -173,6 +183,11 @@
       "imageSources": [
         "ai",
         "openverse"
+      ],
+      "imageFallback": [
+        "neon city night",
+        "sports car night",
+        "Miami skyline"
       ]
     },
     {
@@ -232,6 +247,11 @@
       "imageSources": [
         "openverse",
         "ai"
+      ],
+      "imageFallback": [
+        "cinema theater",
+        "film reel",
+        "movie projector"
       ]
     },
     {
@@ -300,6 +320,11 @@
         "wikimedia",
         "openverse",
         "ai"
+      ],
+      "imageFallback": [
+        "Bangladesh heritage",
+        "old Dhaka architecture",
+        "ancient ruins"
       ]
     },
     {
@@ -345,6 +370,10 @@
           "url": "https://www.aljazeera.com/xml/rss/all.xml",
           "type": "rss"
         }
+      ],
+      "imageFallback": [
+        "Dhaka city",
+        "newspaper"
       ]
     }
   ],
