@@ -104,8 +104,8 @@ async function fromAi(prompt: string): Promise<FoundImage | null> {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-goog-api-key": env.geminiKey },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `${prompt}. Editorial illustration, rich colors, portrait 4:5. No text, no letters, no logos, no watermarks, no real people, no copyrighted characters.` }] }],
-        generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: "4:5" } },
+        contents: [{ parts: [{ text: `${prompt}. Editorial illustration, rich colors, square 1:1. No text, no letters, no logos, no watermarks, no real people, no copyrighted characters.` }] }],
+        generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: "1:1" } },
       }),
       signal: AbortSignal.timeout(90_000),
     }).catch(() => null);
