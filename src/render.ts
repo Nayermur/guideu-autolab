@@ -8,9 +8,9 @@ import type { EventInfo } from "./sources.js";
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-/** Post size: square 1080x1080 by default ("postSize": "portrait" in team.json gives 1080x1350). */
+/** Post size: portrait 4:5 (1080x1350) by default; "postSize": "square" in team.json gives 1080x1080. */
 export const POST_W = 1080;
-export const POST_H = (team as any).postSize === "portrait" ? 1350 : 1080;
+export const POST_H = (team as any).postSize === "square" ? 1080 : 1350;
 const SQ = POST_H === 1080;
 /** Scales a size for the square format, where there is less room. */
 const k = (n: number) => Math.round(SQ ? n * 0.85 : n);
@@ -32,7 +32,7 @@ export function eventDate(ev: EventInfo) {
   };
 }
 
-/** Builds the Instagram post (square by default) as HTML. Edit this to change your visual style. */
+/** Builds the Instagram post (4:5 portrait by default) as HTML. Edit this to change your visual style. */
 export function postHtml(o: { headline: string; subline: string; source: string; brief: DesignBrief; event?: EventInfo; photo?: string; credit?: string }): string {
   o = { ...o, headline: String(o.headline ?? ""), subline: String(o.subline ?? ""), source: String(o.source ?? "") };
   if (o.photo && (o.brief.layout === "photo-bg" || o.brief.layout === "photo-card")) return photoPosterHtml({ ...o, photo: o.photo });
