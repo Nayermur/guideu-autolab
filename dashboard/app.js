@@ -165,6 +165,29 @@ function render() {
   if (room === "team") renderBots();
 }
 
+function decisionButtons(d) {
+  if (deciding[d.id]) return `<div class="decide"><span class="hint">${deciding[d.id] === "approved" ? "✅ অনুমোদিত, Instagram-এ পাঠানো হচ্ছে…" : "❌ বাতিল করা হয়েছে"}</span></div>`;
+  return `<div class="decide"><button class="send small" data-decide="approved" data-draft="${esc(d.id)}">✅ Approve</button><button class="ghost small" data-decide="rejected" data-draft="${esc(d.id)}">❌ Reject</button></div>`;
+}
+
+const deciding = {}; // draft id -> decision made in this session (until the next data refresh shows it)
+
+async function decide(id, decision, btn) {
+  if (decision === "rejected" && !confirm("এই ড্রাফটটা বাতিল করবেন?")) return;
+  btn?.closest(".decide")?.querySelectorAll("button").forEach((b) => (b.disabled = true));
+  try {
+    await api("/api/decide", { id, decision });
+    deciding[id] = decision;
+    const d = state.drafts.find((x) => x.id === id);
+    if (d) d.status = decision;
+    render();
+    if ($("#draftDialog").open) $("#draftDialog").close();
+  } catch (err) {
+    alert(err.message);
+    btn?.closest(".decide")?.querySelectorAll("button").forEach((b) => (b.disabled = false));
+  }
+}
+
 function draftCard(d) {
   const img = d.imagePath ? `<img src="${esc(d.imagePath)}" alt="" loading="lazy">` : `<div class="noimg"></div>`;
   return `<button class="draft" data-id="${esc(d.id)}">${img}<div>
@@ -180,7 +203,9 @@ function renderTab() {
   const drafts = [...(state.drafts ?? [])].reverse();
   if (tab === "missions") {
     const list = drafts.filter((d) => d.status === "pending");
-    body.innerHTML = list.length ? list.map(draftCard).join("") : `<div class="empty">এখন কোনো ড্রাফট অপেক্ষায় নেই। পরের শিফটে নতুন খবর আসবে।</div>`;
+    body.innerHTML = list.length
+      ? list.map((d) => `<div class="mission">${draftCard(d)}${decisionButtons(d)}</div>`).join("")
+      : `<div class="empty">এখন কোনো ড্রাফট অপেক্ষায় নেই। পরের শিফটে নতুন খবর আসবে।</div>`;
   } else if (tab === "archive") {
     const list = drafts.filter((d) => d.status !== "pending");
     body.innerHTML = list.length ? list.map(draftCard).join("") : `<div class="empty">আর্কাইভ খালি।</div>`;
@@ -212,7 +237,7 @@ function openDraft(id) {
     <div>
       <div class="chips"><span class="chip niche">${esc(nicheName(d.niche))}</span><span class="chip ${esc(d.status)}">${esc(d.status)}</span><span class="chip score">Critic ${bn(d.critic?.score ?? "–")}/১০</span><span class="chip">রিভিশন ${bn(d.critic?.revisions ?? 0)}</span></div>
       <h2>${esc(d.headline)}</h2>
-      ${d.status === "pending" ? `<p class="hint">Approve বা Reject করতে Telegram-এ বোতাম চাপুন।</p>` : ""}
+      ${d.status === "pending" ? decisionButtons(d) : ""}
       ${d.status === "approved" ? `<p class="hint">অনুমোদিত। পরের সিঙ্কে (৩০ মিনিটের মধ্যে) Instagram-এ যাবে।${d.publish?.lastError ? ` শেষ চেষ্টায় সমস্যা: ${esc(d.publish.lastError)}` : ""}</p>` : ""}
       ${d.instagram ? `<p class="hint">📢 Instagram-এ পোস্ট হয়েছে ${ago(d.instagram.publishedAt)}${d.instagram.permalink ? `: <a href="${esc(d.instagram.permalink)}" target="_blank" rel="noopener">পোস্ট দেখুন</a>` : ""}</p>` : ""}
       ${d.status === "failed" ? `<p class="hint" style="color:var(--err)">Instagram-এ পোস্ট করা যায়নি: ${esc(d.publish?.lastError ?? "")}</p>` : ""}
@@ -450,8 +475,13 @@ document.querySelector(".tabs").addEventListener("click", (e) => {
   store.set("autolab-tab", tab);
   renderTab();
 });
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-decide]");
+  if (b) { e.stopPropagation(); decide(b.dataset.draft, b.dataset.decide, b); }
+}, true);
 for (const sel of ["#tabBody", "#botList", "#requests"]) {
   $(sel).addEventListener("click", (e) => {
+    if (e.target.closest("[data-decide]")) return;
     const card = e.target.closest("[data-id]");
     if (card) openDraft(card.dataset.id);
   });

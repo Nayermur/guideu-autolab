@@ -253,3 +253,8 @@ a { color: #8fb3ff; }
 /* Room panels: keep [hidden] working even on panels with their own display value */
 .panel[hidden] { display: none !important; }
 .bot-form .row2 .send { margin-left: auto; }
+
+/* Approve / Reject */
+.mission { display: grid; gap: 8px; }
+.decide { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.detail .decide { margin: 10px 0; }

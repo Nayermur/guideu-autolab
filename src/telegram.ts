@@ -73,7 +73,14 @@ export async function notify(text: string) {
 /** Applies Approve/Reject button presses made since the last run. */
 export async function processTelegramUpdates(state: State) {
   if (!telegramEnabled()) return;
-  const updates: any[] = await api("getUpdates", { offset: state.telegramOffset, timeout: 0, allowed_updates: ["callback_query"] });
+  let updates: any[];
+  try {
+    updates = await api("getUpdates", { offset: state.telegramOffset, timeout: 0, allowed_updates: ["callback_query"] });
+  } catch (e: any) {
+    // With the instant webhook on, button presses arrive through the dashboard instead.
+    if (/webhook is active/i.test(e.message)) return;
+    throw e;
+  }
   for (const u of updates) {
     state.telegramOffset = u.update_id + 1;
     const cq = u.callback_query;
@@ -139,4 +146,22 @@ export async function telegramDebug(offset: number): Promise<string[]> {
     out.push(`  #${u.update_id} ${kind} · ${same}${u.callback_query ? ` · data=${u.callback_query.data}` : ""}${u.message?.text ? ` · text=${String(u.message.text).slice(0, 20)}` : ""}`);
   }
   return out;
+}
+
+/** Replaces a draft message's buttons with a single status label (e.g. "Approved ✅"). */
+export async function markDraftMessage(messageId: number | undefined, label: string) {
+  if (!telegramEnabled() || !messageId) return;
+  await api("editMessageReplyMarkup", {
+    chat_id: env.telegramChatId,
+    message_id: messageId,
+    reply_markup: { inline_keyboard: [[{ text: label, callback_data: "noop:0" }]] },
+  }).catch(() => {});
+}
+
+/** Points the bot's button presses at the dashboard, so approvals are applied right away. */
+export async function setTelegramWebhook(url: string, secret: string) {
+  if (!telegramEnabled()) throw new Error("Telegram is not configured");
+  await api("setWebhook", { url, secret_token: secret, allowed_updates: ["callback_query"] });
+  const info = await api("getWebhookInfo", {});
+  return `Webhook set to ${info.url} (pending updates: ${info.pending_update_count ?? 0})`;
 }

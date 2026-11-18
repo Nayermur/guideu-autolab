@@ -121,6 +121,12 @@ Telegram-এ ✅ Approve চাপলে ৩০ মিনিটের মধ্�
 
 ড্যাশবোর্ডের সার্ভার ফাংশনগুলো আছে `api/` ফোল্ডারে। workflow এগুলো ডেটা রিপোতে কপি করে দেয়, আর Vercel সেখান থেকে চালায়।
 
+## Approve / Reject
+
+- **Telegram:** ড্রাফটের নিচে ✅ Approve / ❌ Reject বোতাম। Telegram বোতাম চাপার খবর সরাসরি ড্যাশবোর্ডের `api/telegram` ফাংশনে পাঠায় (webhook), তাই সাথে সাথে সিঙ্ক শুরু হয় আর এক-দুই মিনিটের মধ্যে পোস্ট Instagram-এ যায়। চালু করতে workflow-এর `telegram-webhook` mode একবার চালান। এর জন্য লাগবে: ডেটা রিপোর `data/config/telegram.json`-এ `telegramWebhookSecret`, আর Vercel-এ একই মান `TELEGRAM_WEBHOOK_SECRET` নামে। Vercel-এ `TELEGRAM_BOT_TOKEN` দিলে বোতামটা সাথে সাথে "Approved ✅" দেখায়, না দিলে পরের সিঙ্কে দেখায়।
+- **ড্যাশবোর্ড:** মিশন ট্যাবে আর ড্রাফট খুললে একই বোতাম থাকে (`api/decide`)।
+- দুটো পথেই সিদ্ধান্ত ডেটা রিপোর `data/decisions/`-এ একটা ছোট ফাইল হয়ে জমা হয়, আর পরের সিঙ্কে সেটা কাজে লাগে।
+
 ## নিজের মতো সাজান: `team.json`
 
 কোড না ছুঁয়েই বদলানো যায়:

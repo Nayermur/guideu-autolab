@@ -13,7 +13,7 @@ on:
         description: "shift = run the whole team, telegram = sync approvals + publish to Instagram, inbox = turn Pakhi's requests into drafts, bot = run one Specialised Team bot, check-feeds = test sources, test-telegram = send a Telegram test message"
         default: shift
         type: choice
-        options: [shift, telegram, inbox, bot, check-feeds, test-telegram]
+        options: [shift, telegram, inbox, bot, check-feeds, test-telegram, telegram-webhook]
       niche:
         description: "Which niche to run (auto = next in rotation)"
         default: auto
@@ -98,6 +98,10 @@ jobs:
       - name: Test Telegram setup
         if: env.MODE == 'test-telegram'
         run: npm run test-telegram
+
+      - name: Turn on instant Telegram approvals
+        if: env.MODE == 'telegram-webhook'
+        run: npm run telegram-webhook
 
       - name: Save team memory and dashboard to the private repo
         if: always()

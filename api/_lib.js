@@ -109,3 +109,14 @@ export async function startWorkflow(inputs) {
 
 export const newId = (prefix = "") =>
   `${prefix}${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.random().toString(36).slice(2, 7)}`;
+
+/** Saves an Approve/Reject decision for the team and starts a sync right away. */
+export async function recordDecision({ draftId, decision, via, chatId }) {
+  if (!/^[\w-]{1,60}$/.test(draftId)) throw new Error("Bad draft id");
+  if (!["approved", "rejected"].includes(decision)) throw new Error("Bad decision");
+  const at = new Date().toISOString();
+  const body = { draftId, decision, at, via, ...(chatId ? { chatId: String(chatId) } : {}) };
+  await writeDataFile(`data/decisions/${draftId}-${Date.now()}.json`, JSON.stringify(body, null, 2) + "\n", `${decision} ${draftId} (${via})`);
+  await startWorkflow({ mode: "telegram" });
+  return body;
+}

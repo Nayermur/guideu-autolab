@@ -3,7 +3,8 @@ import { generate } from "./llm.js";
 import { runCycle, decide, syncApprovals, retry, runInbox, runBot } from "./pipeline.js";
 import { instagramEnabled, publishApproved } from "./instagram.js";
 import { loadState } from "./store.js";
-import { processTelegramUpdates, testTelegram, telegramDebug } from "./telegram.js";
+import { processTelegramUpdates, testTelegram, telegramDebug, setTelegramWebhook } from "./telegram.js";
+import { privateConfig } from "./workspace.js";
 import { fetchSource } from "./sources.js";
 
 const [cmd = "help", arg] = process.argv.slice(2);
@@ -49,6 +50,12 @@ async function main() {
     case "telegram": {
       await processTelegramUpdates(loadState());
       console.log("Telegram approvals synced.");
+      break;
+    }
+    case "telegram-webhook": {
+      const secret = privateConfig().telegramWebhookSecret;
+      if (!secret) throw new Error("data/config/telegram.json has no telegramWebhookSecret");
+      console.log(await setTelegramWebhook(`${team.dashboardUrl.replace(/\/$/, "")}/api/telegram`, secret));
       break;
     }
     case "test-telegram": {

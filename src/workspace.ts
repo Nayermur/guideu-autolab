@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { ROOT, type Niche, type SourceConfig } from "./config.js";
 import type { EventInfo } from "./sources.js";
@@ -115,4 +115,36 @@ export function botNiche(bot: Bot): Niche {
       : // No sources given: search Google News for the topic.
         [{ type: "rss", name: "Google News", url: `https://news.google.com/rss/search?q=${encodeURIComponent(bot.topic)}+when:3d&hl=bn&gl=BD&ceid=BD:bn` }],
   };
+}
+
+// ---------- Approvals from the dashboard ----------
+/** Written by the dashboard's server functions: data/decisions/<draftId>-<time>.json */
+export interface Decision {
+  draftId: string;
+  decision: "approved" | "rejected";
+  at: string;
+  via: "telegram" | "dashboard";
+  /** For Telegram presses: the chat the button was pressed in. */
+  chatId?: string;
+  file: string;
+}
+
+export function removeDecision(d: Decision) {
+  rmSync(d.file, { force: true });
+}
+
+export function takeDecisions(): Decision[] {
+  const dir = resolve(DATA, "decisions");
+  if (!existsSync(dir)) return [];
+  const list = readdirSync(dir)
+    .filter((f) => f.endsWith(".json"))
+    .map((f) => ({ ...(JSON.parse(readFileSync(resolve(dir, f), "utf8")) as Omit<Decision, "file">), file: resolve(dir, f) }))
+    .sort((a, b) => a.at.localeCompare(b.at));
+  return list;
+}
+
+/** The private settings the dashboard and the workflow share (not published to the site). */
+export function privateConfig(): { telegramWebhookSecret?: string } {
+  const file = resolve(DATA, "config", "telegram.json");
+  return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {};
 }

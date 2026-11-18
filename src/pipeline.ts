@@ -1,10 +1,10 @@
 import { team, env, enabledNiches, findNiche, type Niche } from "./config.js";
 import { scout, verify, write, critique, designBrief, mixedScriptWords, banglaShare, type Copy, type Review } from "./agents.js";
 import { fetchNicheItems, fetchArticleText, fetchMetaDescription, type FeedItem } from "./sources.js";
-import { listInbox, saveInbox, readInboxImage, officeNiche, loadBots, findBot, botNiche } from "./workspace.js";
+import { listInbox, saveInbox, readInboxImage, officeNiche, loadBots, findBot, botNiche, takeDecisions, removeDecision } from "./workspace.js";
 import { postHtml, renderPost } from "./render.js";
 import { loadState, saveState, log, setAgent, newId, type Draft, type State } from "./store.js";
-import { sendDraft, notify, processTelegramUpdates, resendUnsent } from "./telegram.js";
+import { sendDraft, notify, processTelegramUpdates, resendUnsent, markDraftMessage } from "./telegram.js";
 import { publishApproved } from "./instagram.js";
 
 const A = team.agents;
@@ -248,7 +248,23 @@ export async function runCycle(): Promise<Draft[]> {
 }
 
 /** Applies Telegram button presses, then publishes approved drafts to Instagram. */
+/** Applies Approve/Reject decisions saved by the dashboard (Telegram webhook or dashboard buttons). */
+async function applyDecisions(state: State) {
+  for (const dec of takeDecisions()) {
+    const draft = state.drafts.find((d) => d.id === dec.draftId);
+    const fromOwner = dec.via === "dashboard" || !dec.chatId || dec.chatId === String(env.telegramChatId);
+    if (draft && fromOwner && draft.status === "pending") {
+      draft.status = dec.decision;
+      draft.decidedAt = dec.at;
+      log(state, "system", `Owner ${dec.decision} draft ${draft.id} via ${dec.via}`);
+      await markDraftMessage(draft.telegramMessageId, dec.decision === "approved" ? "Approved ✅" : "Rejected ❌");
+    }
+    removeDecision(dec);
+  }
+}
+
 export async function syncApprovals(state: State = loadState()) {
+  await applyDecisions(state).catch((e) => log(state, "system", `Applying approvals failed: ${e.message}`));
   await processTelegramUpdates(state).catch((e) => log(state, "system", `Telegram check failed: ${e.message}`));
   await resendUnsent(state).catch((e) => log(state, "system", `Telegram send failed: ${e.message}`));
   await publishApproved(state).catch((e) => log(state, "system", `Instagram publishing failed: ${e.message}`));

@@ -71,6 +71,8 @@ export default async function middleware(request) {
   }
 
   if (PUBLIC_IMAGE.test(url.pathname)) return next();
+  // Telegram's button presses: no login possible, so api/telegram.js checks Telegram's secret header.
+  if (url.pathname === "/api/telegram") return next();
 
   const loggedIn = await validSession(AUTH_SECRET, request.headers.get("cookie"));
 
